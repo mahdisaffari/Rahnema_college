@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.normEmail = exports.isPassword = exports.isEmail = exports.isNonEmptyString = void 0;
+const isNonEmptyString = (v) => typeof v === "string" && v.trim().length > 0;
+exports.isNonEmptyString = isNonEmptyString;
+const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+exports.isEmail = isEmail;
+const isPassword = (s) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/.test(s);
+exports.isPassword = isPassword;
+const normEmail = (e) => e.trim().toLowerCase();
+exports.normEmail = normEmail;

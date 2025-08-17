@@ -1,0 +1,59 @@
+### ثبت‌ نام
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+  "username": "r",
+  "email": "poaibaie2002ff@gmail.com",
+  "password": "Secret123?"
+}
+
+###  تکراری  409 
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+  "username": "pouriaz",
+  "email": "pooriaz.babaie2002@gmail.com",
+  "password": "Secret123?"
+}
+
+### لاگین یوزرنیم
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "login": "pouriaz",
+  "password": "Secret123?"
+}
+
+### لاگین ایمیل
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "login": "pooria.babaie2002@gmail.com",
+  "password": "Secret123?"
+}
+
+### لاگین پسورد اشتباه 401 
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "login": "pouria",
+  "password": "WrongPass123!"
+}
+
+### /me  توکن معتبر
+GET http://localhost:3000/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsInVzZXJuYW1lIjoicG91cmlhIiwiZW1haWwiOiJwb29yaWEuYmFiYWllMjAwMkBnbWFpbC5jb20iLCJpYXQiOjE3NTU0Mzg4MjEsImV4cCI6MTc1NTQzOTcyMX0.sq1HPfClb5IzxxPstgfP55EGbWJnaISnQ80XzwzGxfA
+
+
+### /me بدون توکن ( 401 )
+GET http://localhost:3000/me
+
+
+### /me توکن اشتباه ( 401 )
+GET http://localhost:3000/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInVzZXJuYW1lIjoicG91cmlheiIsImVtYWlsIjoicG9vcmlhei5iYWJhaWUyMDAyQGdtYWlsLmNvbSIsImlhdCI6MTc1NTI2Mzc4MCwiZXhwIjoxNzU1MjY0NjgwfQ.9BuGJ1d3nbOzN57Pxv6EZbGiE7kjqhf66FtjuUilwv4
