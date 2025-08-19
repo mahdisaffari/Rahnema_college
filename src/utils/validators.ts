@@ -1,3 +1,6 @@
+/**
+ * ghavanin input hay ke dar har fild bayad rayat beshe
+ */
 
 export const isNonEmptyString = (v: unknown): v is string =>
   typeof v === "string" && v.trim().length > 0;
