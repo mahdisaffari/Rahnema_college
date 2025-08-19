@@ -3,8 +3,8 @@ POST http://localhost:3000/register
 Content-Type: application/json
 
 {
-  "username": "r",
-  "email": "poaibaie2002ff@gmail.com",
+  "username": "aghareza3",
+  "email": "poaibaie2002ff3@gmail.com",
   "password": "Secret123?"
 }
 
@@ -23,7 +23,7 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "login": "pouriaz",
+  "identifier": "poaibaie2002ff3@gmail.com",
   "password": "Secret123?"
 }
 
@@ -32,7 +32,7 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "login": "pooria.babaie2002@gmail.com",
+  "identifier": "pooria.babaie2002@gmail.com",
   "password": "Secret123?"
 }
 
@@ -41,7 +41,7 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "login": "pouria",
+  "identifier": "pouria",
   "password": "WrongPass123!"
 }
 
