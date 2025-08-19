@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { JWT_SECRET, JWT_EXPIRES } from "../config/env";
 
+//be nazar behatere inja user tarif nashe 
 interface AuthUser { id: number; username: string; email: string }
 
 import type { SignOptions } from "jsonwebtoken";

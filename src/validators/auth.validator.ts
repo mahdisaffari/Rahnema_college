@@ -5,3 +5,6 @@ export const registerInputSchema = z.object({
     password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/),
     email: z.email()
   })
+
+  // inja kolan kosshere
+  

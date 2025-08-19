@@ -4,14 +4,16 @@ import bcrypt from "bcryptjs";
 import { isNonEmptyString, isEmail, isPassword, normEmail } from "../utils/validators";
 import { signAccessToken } from "../utils/jwt";
 import { auth } from "../middleware/auth";
-import z from 'zod'
 const prisma = new PrismaClient();
 const router = Router();
 
 // Register
 router.post("/register", async (req, res) => {
-
-  const { username, email, password } = req.body ?? {};
+                                      /** inja darim obj khali 
+                                       * ro hame toye sharta pass midim ke
+                                       * dorost ni bayad taghiresh bedim */ 
+  const { username, email,password } = req.body ?? {};
+  
   if (username.length < 5) 
     return res.status(400).json({ success: false, message: "username is required" });
   if (!isNonEmptyString(email) || !isEmail(email))
@@ -19,10 +21,13 @@ router.post("/register", async (req, res) => {
   if (!isNonEmptyString(password) || !isPassword(password))
     return res.status(400).json({ success: false, message: "Weak password" });
 
-  try {
+  try {                             /*tamam meghdar haro ham zaman migirim
+                                      ba Promise.all ke alan user va email hastesh*/
     const [byUser, byEmail] = await Promise.all([
-      prisma.user.findUnique({ where: { username: username.trim() } }),
-      prisma.user.findUnique({ where: { email: normEmail(email) } }),
+      prisma.user.findUnique({ 
+        where: { username: username.trim() } }), // username babin hast
+      prisma.user.findUnique({
+         where: { email: normEmail(email) } }), // email bebein hast
     ]);
     if (byUser) return res.status(400).json({ success: false, message: "username exists" });
     if (byEmail) return res.status(400).json({ success: false, message: "email exists" });
@@ -39,17 +44,25 @@ router.post("/register", async (req, res) => {
 +
 // Login
 router.post("/login", async (req, res) => {
-  const { login, password } = req.body ?? {};
+                                  /**
+                                   * inja ham hamon moshkel takrar shode
+                                   * onj khali be sharta dare pass dade mishe 
+                                   */
+  const { login, password } = req.body ?? {}; // req.body ?? {} = agar req.body null/undefind bod ye obj khali bargardon
+
   if (!isNonEmptyString(login) || !isNonEmptyString(password))
     return res.status(400).json({ success: false, message: "login and password are required" });
 
-  const isEmailLogin = login.includes("@");
+  const isEmailLogin = login.includes("@"); //sharte bara email 
+
   const user = isEmailLogin
     ? await prisma.user.findUnique({ where: { email: normEmail(login) } })
     : await prisma.user.findUnique({ where: { username: login.trim() } });
 
+  
   if (!user) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
+  // passwordo begirim ba hamon tabe dobare hash konim bebinim motabeghat dare ya na
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
