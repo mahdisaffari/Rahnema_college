@@ -15,10 +15,10 @@ export const register = async (req: Request<{}, {}, RegisterRequest>, res: Respo
 
   try { // vorodi valid bod user to db save mishe be kar bar migim
     await authService.register(req.body.username, req.body.email, req.body.password);
-    return res.status(201).json({ success: true, message: "User registered" });
+    return res.status(201).json({ success: true, message: "کاربر ثبت نام شده" });
   } catch (e: any) {
     console.error(e);
-    return res.status(500).json({ success: false, message: e.message || "Internal error" });
+    return res.status(500).json({ success: false, message: e.message || "خطای داخلی" });
   }
 };
 
@@ -29,13 +29,17 @@ export const login = async (req: Request<{}, {}, LoginRequest>, res: Response<Lo
 
   try { // vorodi valid bod token dade mishe
     const token = await authService.login(req.body.identifier, req.body.password);
-    return res.json({ success: true, message: "Login successful", token });
+    return res.json({ success: true, message: "ورود با موفقیت انجام شد", token });
   } catch (e: any) {
-    return res.status(401).json({ success: false, message: e.message || "Invalid credentials" });
+    return res.status(401).json({ success: false, message: e.message || "اعتبارنامه‌های نامعتبر" });
   }
 };
 
-// baraye gereftan data user
-export const me = async (req: Request, res: Response) => {
-  return res.json({ success: true, user: (req as any).user });
-};
+
+
+
+
+// // baraye gereftan data user
+// export const me = async (req: Request, res: Response) => {
+//   return res.json({ success: true, user: (req as any).user });
+// };

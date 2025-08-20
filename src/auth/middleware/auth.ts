@@ -18,14 +18,17 @@ export interface AuthRequest extends Request {
 export function auth(req: Request, res: Response, next: NextFunction) {
   // age token toye header nabod yani user register nashode
   const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-  if (!token) return res.status(401).json({ message: "Missing Authorization header" });
 
+  // inja bayad update beshe ta token az cookie gerefte she na header
+  // const token = req.cookies.jwt || (authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null);
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ message: "هدر مجوز وجود ندارد" }); // agar token nabod
+                                        
   try { // ba jwt_secret token baresi mishe age valid bod sub
     const decoded = jwt.verify(token, JWT_SECRET) as { sub: string; username: string; email: string };
     (req as AuthRequest).user = { id: decoded.sub, username: decoded.username, email: decoded.email };
     next();
   } catch {
-    return res.status(401).json({ message: "Invalid or expired token" });
+    return res.status(401).json({ message: "توکن نامعتبر یا منقضی شده" });
   }
 }
