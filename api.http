@@ -3,8 +3,8 @@ POST http://localhost:3000/register
 Content-Type: application/json
 
 {
-  "username": "aghareza3",
-  "email": "poaibaie2002ff3@gmail.com",
+  "username": "aghareza4",
+  "email": "poaibaie2002ff4@gmail.com",
   "password": "Secret123?"
 }
 
@@ -13,7 +13,7 @@ POST http://localhost:3000/register
 Content-Type: application/json
 
 {
-  "username": "pouriaz",
+  "username": "pouria",
   "email": "pooriaz.babaie2002@gmail.com",
   "password": "Secret123?"
 }
@@ -23,7 +23,7 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "identifier": "poaibaie2002ff3@gmail.com",
+  "identifier": "poaibaie2002ff4@gmail.com",
   "password": "Secret123?"
 }
 
@@ -57,3 +57,82 @@ GET http://localhost:3000/me
 ### /me توکن اشتباه ( 401 )
 GET http://localhost:3000/me
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsInVzZXJuYW1lIjoicG91cmlheiIsImVtYWlsIjoicG9vcmlhei5iYWJhaWUyMDAyQGdtYWlsLmNvbSIsImlhdCI6MTc1NTI2Mzc4MCwiZXhwIjoxNzU1MjY0NjgwfQ.9BuGJ1d3nbOzN57Pxv6EZbGiE7kjqhf66FtjuUilwv4
+
+###
+
+GET http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwOWYzMDY4Zi0wNmNlLTQzYjUtYTNiMi04NDQ2NzdhOGFmOWMiLCJ1c2VybmFtZSI6ImFnaGFyZXphNCIsImVtYWlsIjoicG9haWJhaWUyMDAyZmY0QGdtYWlsLmNvbSIsImlhdCI6MTc1NTY4NTQ5NSwiZXhwIjoxNzU1Njg2Mzk1fQ.60EDOq67ezY-GbaB0PQySgxxS30hi0lUOV2xohlGeeE
+
+// for update
+//////////////////////////////////////////////////////////
+
+
+
+###
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+  "username": "testuser1",
+  "email": "testuser1@example.com",
+  "password": "Secret123!"
+}
+
+###
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+  "identifier": "testuser1",
+  "password": "NewPass123!!" 
+}
+
+###
+GET http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoidGVzdHVzZXIxQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU1NzAwMDk4LCJleHAiOjE3NTU3MDA5OTh9.cImkSnr1IGRSQnEpDldcr0rgomCJJ3Sh6Ic74l1vJ48
+
+
+###
+PUT http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoidGVzdHVzZXIxQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU1NzAwMDk4LCJleHAiOjE3NTU3MDA5OTh9.cImkSnr1IGRSQnEpDldcr0rgomCJJ3Sh6Ic74l1vJ48
+Content-Type: application/json
+
+{
+  "firstname": "ali",
+  "lastname": "mohamadi",
+  "bio": "ba cookie in test",
+  "avatar": "https://your-minio-domain.com/avatar.jpg",
+  "email": "newuser2@example.com",
+  "password": "NewPass123!!"
+}
+
+###
+PUT http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoidGVzdHVzZXIxQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU1NzAwMDk4LCJleHAiOjE3NTU3MDA5OTh9.cImkSnr1IGRSQnEpDldcr0rgomCJJ3Sh6Ic74l1vJ48
+Content-Type: application/json
+
+{
+  "email": "poaibaie2002ff@gmail.com" 
+}
+
+
+
+### آپلود آواتار
+PUT http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoibmV3dXNlcjJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTU3Njk3NDEsImV4cCI6MTc1NTc3MzM0MX0.tMgYYbbQ5EeWLSVOuEnndCiM8SREyAr-HA5RyI14V4k
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="avatar"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< /home/kiarash/rah/project/back_end/codechefs-backend/uploads/test.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="email"
+
+newuser2@example.com
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+GET http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoibmV3dXNlcjJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTU3Njk3NDEsImV4cCI6MTc1NTc3MzM0MX0.tMgYYbbQ5EeWLSVOuEnndCiM8SREyAr-HA5RyI14V4k
