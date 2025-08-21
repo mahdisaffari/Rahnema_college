@@ -83,8 +83,8 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "identifier": "testuser1@example.com",
-  "password": "Secret123!"
+  "identifier": "testuser1",
+  "password": "NewPass123!!" 
 }
 
 ###
@@ -112,5 +112,44 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlY
 Content-Type: application/json
 
 {
-  "email": "poaibaie2002ff@gmail.com" // ایمیلی که قبلاً ثبت شده
+  "email": "poaibaie2002ff@gmail.com" 
 }
+
+### آپلود آواتار
+### تحلیل خطا
+HTTP/1.1 500 Internal Server Error
+X-Powered-By: Express
+Access-Control-Allow-Origin: http://localhost:3000
+Vary: Origin
+Access-Control-Allow-Credentials: true
+Content-Type: application/json; charset=utf-8
+Content-Length: 48
+ETag: W/"30-EekEA+RHpJnccNlxfmzyGijHL6s"
+Date: Thu, 21 Aug 2025 09:40:37 GMT
+Connection: close
+
+{
+  "success": false,
+  "message": "Invalid image file"
+}
+
+
+### آپلود آواتار
+PUT http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoibmV3dXNlcjJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTU3Njk3NDEsImV4cCI6MTc1NTc3MzM0MX0.tMgYYbbQ5EeWLSVOuEnndCiM8SREyAr-HA5RyI14V4k
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="avatar"; filename="test.jpg"
+Content-Type: image/jpeg
+
+< /home/kiarash/rah/project/back_end/codechefs-backend/uploads/test.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="email"
+
+newuser2@example.com
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###
+GET http://localhost:3000/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoibmV3dXNlcjJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTU3Njk3NDEsImV4cCI6MTc1NTc3MzM0MX0.tMgYYbbQ5EeWLSVOuEnndCiM8SREyAr-HA5RyI14V4k

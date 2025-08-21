@@ -1,6 +1,7 @@
-import { AuthUser } from "./auth.types";
-
-export interface ProfileUser extends AuthUser {
+export interface ProfileUser {
+  id: string;
+  username: string;
+  email: string;
   firstname: string | null;
   lastname: string | null;
   bio: string | null;
@@ -11,9 +12,9 @@ export interface ProfileUpdateRequest {
   firstname?: string;
   lastname?: string;
   bio?: string;
-  avatar?: string;
-  email?: string; 
-  password?: string; 
+  avatar?: Express.Multer.File; // فایل آواتار
+  email?: string;
+  password?: string;
 }
 
 export interface ProfileResponse {
