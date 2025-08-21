@@ -2,18 +2,13 @@ import { Request, Response } from "express";
 import * as authService from "../services/auth.service";
 import { validateLogin, validateRegister } from "../validators/auth.validator";
 import { LoginRequest, RegisterRequest, RegisterResponse, LoginResponse } from "../../types/auth.types";
+import { setAuthCookies, clearAuthCookies } from "../../utils/jwt";
 
-
-/**
- * inja ertebat ba user va modiriat res/req 
- */
-
-// entezar darim vorodi az noe RegisterRequest
 export const register = async (req: Request<{}, {}, RegisterRequest>, res: Response<RegisterResponse>) => {
   const error = validateRegister(req.body); 
   if (error) return res.status(400).json({ success: false, message: error });
 
-  try { // vorodi valid bod user to db save mishe be kar bar migim
+  try {
     await authService.register(req.body.username, req.body.email, req.body.password);
     return res.status(201).json({ success: true, message: "کاربر ثبت نام شده" });
   } catch (e: any) {
@@ -22,24 +17,20 @@ export const register = async (req: Request<{}, {}, RegisterRequest>, res: Respo
   }
 };
 
-// entezar darim vorodi az noe LoginRequest
 export const login = async (req: Request<{}, {}, LoginRequest>, res: Response<LoginResponse>) => {
   const error = validateLogin(req.body); 
   if (error) return res.status(400).json({ success: false, message: error });
 
-  try { // vorodi valid bod token dade mishe
+  try {
     const token = await authService.login(req.body.identifier, req.body.password);
-    return res.json({ success: true, message: "ورود با موفقیت انجام شد", token });
+    setAuthCookies(res, token); // ست کردن کوکی
+    return res.json({ success: true, message: "ورود با موفقیت انجام شد" });
   } catch (e: any) {
     return res.status(401).json({ success: false, message: e.message || "اعتبارنامه‌های نامعتبر" });
   }
 };
 
-
-
-
-
-// // baraye gereftan data user
-// export const me = async (req: Request, res: Response) => {
-//   return res.json({ success: true, user: (req as any).user });
-// };
+export const logout = async (_req: Request, res: Response) => {
+  clearAuthCookies(res); // پاک کردن کوکی‌ها
+  return res.json({ success: true, message: "خروج انجام شد" });
+};

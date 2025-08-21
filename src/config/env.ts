@@ -1,6 +1,19 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
+import type { SignOptions } from "jsonwebtoken";
 
-export const JWT_SECRET = process.env.JWT_SECRET ?? "dev_secret_change_me";
-export const JWT_EXPIRES = process.env.JWT_EXPIRES ?? "1h";
-export const PORT = Number(process.env.PORT || 3000);
+function req(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env: ${name}`);
+  return v;
+}
+
+function parseExpires(value: string): SignOptions["expiresIn"] {
+  return value as SignOptions["expiresIn"];
+}
+
+export const env = {
+  NODE_ENV: process.env.NODE_ENV ?? "development",
+  PORT: Number(process.env.PORT ?? 3000),
+  JWT_ACCESS_SECRET: req("JWT_ACCESS_SECRET"),
+  JWT_ACCESS_EXPIRES: parseExpires(process.env.JWT_ACCESS_EXPIRES ?? "15m"),
+};

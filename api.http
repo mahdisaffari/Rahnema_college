@@ -100,7 +100,7 @@ Content-Type: application/json
 {
   "firstname": "ali",
   "lastname": "mohamadi",
-  "bio": "developer",
+  "bio": "ba cookie in test",
   "avatar": "https://your-minio-domain.com/avatar.jpg",
   "email": "newuser2@example.com",
   "password": "NewPass123!!"
@@ -115,23 +115,6 @@ Content-Type: application/json
   "email": "poaibaie2002ff@gmail.com" 
 }
 
-### آپلود آواتار
-### تحلیل خطا
-HTTP/1.1 500 Internal Server Error
-X-Powered-By: Express
-Access-Control-Allow-Origin: http://localhost:3000
-Vary: Origin
-Access-Control-Allow-Credentials: true
-Content-Type: application/json; charset=utf-8
-Content-Length: 48
-ETag: W/"30-EekEA+RHpJnccNlxfmzyGijHL6s"
-Date: Thu, 21 Aug 2025 09:40:37 GMT
-Connection: close
-
-{
-  "success": false,
-  "message": "Invalid image file"
-}
 
 
 ### آپلود آواتار
