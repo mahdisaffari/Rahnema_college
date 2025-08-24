@@ -13,7 +13,7 @@ export const validateRegister = ({ username, email, password }: RegisterRequest)
 };
 
 export const validateLogin = ({ identifier, password }: LoginRequest): string | null => {
-  if (!isNonEmptyString(identifier) || !isNonEmptyString(password))
-    return "شناسه و رمز عبور الزامی است";
+  if (!isNonEmptyString(identifier)) return "شناسه الزامی است";
+  if (!isNonEmptyString(password)) return "رمز عبور الزامی است";
   return null;
 };

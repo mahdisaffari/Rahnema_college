@@ -15,3 +15,5 @@ router.get("/profile", auth, getProfileHandler);
 router.put("/profile", auth, upload.single("avatar"), validateProfileUpdateMiddleware, updateProfileHandler);
 
 export default router;
+
+//Client → Middleware → Controller → Service → Database → Controller → Client
