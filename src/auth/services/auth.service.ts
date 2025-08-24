@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 import { normEmail } from "../../utils/validators";
 import { signAccessToken } from "../../utils/jwt";
 import { AuthUser } from "../../types/auth.types";
@@ -39,11 +39,11 @@ export const login = async (identifier: string, password: string) => {
     ? await prisma.user.findUnique({ where: { email: normEmail(identifier) } })
     : await prisma.user.findUnique({ where: { username: identifier.trim() } });
 
-  if (!user) throw new Error("Invalid credentials");
+  if (!user) throw new Error("اعتبارنامه‌های نامعتبر");
 
   // ramz vared shoe ba hash zkhire shode moghayese mishe
   const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) throw new Error("Invalid credentials");
+  if (!ok) throw new Error("اعتبارنامه‌های نامعتبر");
                               // Inja be ye dard na alaj khordam ye rahkar movaghate
   return signAccessToken({ id: user.id.toString(), username: user.username, email: user.email } as AuthUser);
 };

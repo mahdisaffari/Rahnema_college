@@ -8,12 +8,18 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-
 model User {
-  id           String      @id @default(uuid()) 
+  id           String   @id @default(uuid()) 
   username     String   @unique
   email        String   @unique
   passwordHash String
+
+  firstname    String?
+  lastname     String?
+  bio          String?
+  avatar       String?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
