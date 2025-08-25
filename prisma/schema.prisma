@@ -19,7 +19,27 @@ model User {
   bio          String?
   avatar       String?
 
+  posts        Post[]  
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
 
+model Post {
+  id           String    @id @default(uuid()) 
+  caption      String?
+  images       PostImage[]
+
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+
+  createdAt    DateTime  @default(now())
+}
+
+model PostImage {
+  id           String   @id @default(uuid()) 
+  url          String
+
+  post         Post     @relation(fields: [postId], references: [id])
+  postId       String
+}
