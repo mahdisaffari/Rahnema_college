@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { cloudinary } from '../../config/cloudinary.config';
+import { uploadBufferToBucket } from '../../config/minio.config';
 
 const prisma = new PrismaClient();
 
@@ -16,17 +16,7 @@ export async function createPostWithImages(
   if (!images || images.length === 0) throw new Error('No images provided');
 
   const uploadedUrls: string[] = await Promise.all(
-    images.map(
-      (file) =>
-        new Promise<string>((resolve, reject) => {
-          cloudinary.uploader
-            .upload_stream(
-              { folder: 'posts' },
-              (error, result) => (error ? reject(error) : resolve(result!.secure_url))
-            )
-            .end(file.buffer);
-        })
-    )
+    images.map((file) => uploadBufferToBucket(file.buffer, file.originalname, 'posts'))
   );
 
   const created = await prisma.post.create({

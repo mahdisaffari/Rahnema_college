@@ -25,13 +25,6 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-model Image {
-  id     String    @id @default(autoincrement())
-  url    String
-  post   Post   @relation(fields: [postId], references: [id])
-  postId Int
-}
-
 model Post {
   id        String      @id @default(autoincrement())
   caption   String?
@@ -39,4 +32,12 @@ model Post {
   user      User     @relation(fields: [userId], references: [id])
   userId    String
   createdAt DateTime @default(now())
+}
+
+
+model Image {
+  id           String   @id @default(uuid()) 
+  url          String
+  post         Post     @relation(fields: [postId], references: [id])
+  postId       String
 }

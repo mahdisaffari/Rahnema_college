@@ -136,3 +136,31 @@ newuser2@example.com
 ###
 GET http://localhost:3000/profile
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoibmV3dXNlcjJAZXhhbXBsZS5jb20iLCJpYXQiOjE3NTU3Njk3NDEsImV4cCI6MTc1NTc3MzM0MX0.tMgYYbbQ5EeWLSVOuEnndCiM8SREyAr-HA5RyI14V4k
+
+### مسیر فایل ها باید عوض بشه
+### توکن ها باید با توکن واقعی عوض بشن
+###ایجاد پست جدید (آپلود چند تصویر)
+POST http://localhost:3000/posts
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="caption"
+
+این یک کپشن تستی عه
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="images"; filename="image1.jpg"
+Content-Type: image/jpeg
+
+< C:\\path\\to\\image1.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="images"; filename="image2.png"
+Content-Type: image/png
+
+< C:\\path\\to\\image2.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### دریافت پست‌های پروفایل کاربر فعلی
+GET http://localhost:3000/profile/posts
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
+Authorization: Bearer REPLACE_WITH_ACCESS_TOKEN
