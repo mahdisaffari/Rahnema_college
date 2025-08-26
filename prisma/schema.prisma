@@ -26,14 +26,14 @@ model User {
 }
 
 model Image {
-  id     Int    @id @default(autoincrement())
+  id     String    @id @default(autoincrement())
   url    String
   post   Post   @relation(fields: [postId], references: [id])
   postId Int
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        String      @id @default(autoincrement())
   caption   String?
   images    Image[]
   user      User     @relation(fields: [userId], references: [id])

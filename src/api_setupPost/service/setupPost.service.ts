@@ -8,9 +8,9 @@ export async function createPostWithImages(
   caption: string | undefined,
   images: Express.Multer.File[]
 ): Promise<{
-  id: string;
+  id: number;
   caption: string | null;
-  images: { id: string; url: string }[];
+  images: { id: number; url: string }[];
   createdAt: Date;
 }> {
   if (!images || images.length === 0) throw new Error('No images provided');
@@ -43,7 +43,7 @@ export async function createPostWithImages(
   return {
     id: created.id,
     caption: created.caption,
-    images: created.images.map((img:any) => ({ id: img.id, url: img.url })),
+    images: created.images.map((img) => ({ id: img.id, url: img.url })),
     createdAt: created.createdAt,
   };
 }
