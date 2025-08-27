@@ -28,9 +28,9 @@ export async function createPostWithImages(
   caption: string | undefined,
   images: Express.Multer.File[]
 ): Promise<{
-  id: number;
+  id: string;
   caption: string | null;
-  images: { id: number; url: string }[];
+  images: { id: string; url: string }[];
   createdAt: Date;
 }> {
   if (!images || images.length === 0) throw new Error('No images provided');
