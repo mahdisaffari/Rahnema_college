@@ -17,8 +17,6 @@ router.post("/logout", logout);
 router.get("/profile", auth, getProfileHandler);
 router.put("/profile", auth, upload.single("avatar"), validateProfileUpdateMiddleware, updateProfileHandler);
 router.get("/profile/posts", auth, getPostProfileHandler);
-router.post("/posts", auth, upload.array("images", 10), validateSetupPostMiddleware, createSetupPostHandler);
+router.post("/posts", auth, upload.array("images", 5), validateSetupPostMiddleware, createSetupPostHandler);
 
 export default router;
-
-//Client → Middleware → Controller → Service → Database → Controller → Client
