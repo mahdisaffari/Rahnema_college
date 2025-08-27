@@ -9,17 +9,35 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid()) 
-  username     String   @unique
-  email        String   @unique
+  id           String @id @default(uuid())
+  username     String @unique
+  email        String @unique
   passwordHash String
 
-  firstname    String?
-  lastname     String?
-  bio          String?
-  avatar       String?
+  firstname String?
+  lastname  String?
+  bio       String?
+  avatar    String?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  posts Post[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+model Post {
+  id        String      @id @default(autoincrement())
+  caption   String?
+  images    Image[]
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+
+model Image {
+  id           String   @id @default(uuid()) 
+  url          String
+  post         Post     @relation(fields: [postId], references: [id])
+  postId       String
+}

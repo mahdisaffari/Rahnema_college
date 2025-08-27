@@ -2,9 +2,20 @@ import { PrismaClient } from '@prisma/client';
 import { ProfileUser } from '../../types/profile.types';
 import { normEmail } from '../../utils/validators';
 import bcrypt from 'bcryptjs';
-import { cloudinary } from '../../config/cloudinary.config';
+import Minio from 'minio';
 
 const prisma = new PrismaClient();
+
+// MinIO configuration
+const minioClient = new Minio.Client({
+  endPoint: process.env.MINIO_ENDPOINT || 'localhost',
+  port: parseInt(process.env.MINIO_PORT || '9000', 10),
+  useSSL: false,
+  accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+  secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+});
+
+const BUCKET_NAME = 'rahnama';
 
 // ye user migire profile ro mide bedone pass
 export async function getProfile(userId: string): Promise<ProfileUser | null> {
@@ -28,15 +39,16 @@ export async function uploadAvatar(
   file: Express.Multer.File // ye file ax migire
 ): Promise<string> {
   if (!file.buffer || file.buffer.length === 0) throw new Error('Empty file');
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader // ax ro upload mikonim
-      .upload_stream(
-        { public_id: `${userId}-${Date.now()}`, folder: 'avatars' },
-        (error, result) =>
-          error ? reject(error) : resolve(result!.secure_url)
-      )
-      .end(file.buffer);
-  });
+  
+  const objectName = `avatars/${userId}-${Date.now()}-${file.originalname}`;
+  
+  try {
+    await minioClient.putObject(BUCKET_NAME, objectName, file.buffer);
+    const url = `${process.env.MINIO_ENDPOINT || 'localhost'}:${process.env.MINIO_PORT || '9000'}/${BUCKET_NAME}/${objectName}`;
+    return url;
+  } catch (error) {
+    throw new Error(`Failed to upload avatar to MinIO: ${error}`);
+  }
 }
 
 
