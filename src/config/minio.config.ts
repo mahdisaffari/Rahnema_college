@@ -7,6 +7,3 @@ export const minioClient = new Minio.Client({
   accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
   secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
 });
-
-// bucket name باید تغییر کنه
-export const BUCKET_NAME = 'rahnama';

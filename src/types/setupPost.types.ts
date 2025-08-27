@@ -4,12 +4,12 @@ export interface CreatePostRequest {
 }
 
 export interface PostImageDTO {
-  id: number;
+  id: string;
   url: string;
 }
 
 export interface PostDTO {
-  id: number;
+  id: string;
   caption: string | null;
   images: PostImageDTO[];
   createdAt: string;
