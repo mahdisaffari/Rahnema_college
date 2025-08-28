@@ -24,7 +24,7 @@ export const login = async (req: Request<{}, {}, LoginRequest>, res: Response<Lo
   try {
     const token = await authService.login(req.body.identifier, req.body.password);
     setAuthCookies(res, token); // ست کردن کوکی
-    return res.json({ success: true, message: "ورود با موفقیت انجام شد" });
+    return res.json({ success: true, message: "ورود با موفقیت انجام شد", token });
   } catch (e: any) {
     return res.status(401).json({ success: false, message: e.message || "اعتبارنامه‌های نامعتبر" });
   }

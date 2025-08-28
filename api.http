@@ -73,8 +73,8 @@ POST http://localhost:3000/register
 Content-Type: application/json
 
 {
-  "username": "testuser5",
-  "email": "testuser5@example.com",
+  "username": "testuser6",
+  "email": "testuser6@example.com",
   "password": "Secret123!"
 }
 
@@ -83,13 +83,12 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "identifier": "testuser5",
-  "password": "NewPass123!!" 
+  "identifier": "testuser6",
+  "password": "Secret123!" 
 }
 
 ###
 GET http://localhost:3000/profile
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIwZmUwYjRlYS0zODc4LTRiNzQtOTM5NC0zMjQxNzhjZWNkYzUiLCJ1c2VybmFtZSI6InRlc3R1c2VyMSIsImVtYWlsIjoidGVzdHVzZXIxQGV4YW1wbGUuY29tIiwiaWF0IjoxNzU1NzAwMDk4LCJleHAiOjE3NTU3MDA5OTh9.cImkSnr1IGRSQnEpDldcr0rgomCJJ3Sh6Ic74l1vJ48
 
 
 ###
