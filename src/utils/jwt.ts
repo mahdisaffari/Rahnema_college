@@ -1,8 +1,9 @@
 import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
 import { env } from "../config/env";
-import { AuthUser } from "../types/auth.types";
+
 import type { SignOptions } from "jsonwebtoken";
+import { AuthUser } from "../modules/auth/auth.types";
 
 export type JwtPayload = { sub: string; username: string; email: string };
 

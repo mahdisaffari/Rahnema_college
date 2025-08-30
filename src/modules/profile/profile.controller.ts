@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { getProfile, updateProfile } from '../service/profile.service';
-import { AuthRequest } from '../../auth/middleware/auth';
-import { ProfileResponse, ProfileUpdateRequest } from '../../types/profile.types';
+import { getProfile, updateProfile } from './profile.service';
+import { ProfileResponse, ProfileUpdateRequest } from './profile.types';
+import { AuthRequest } from '../auth/auth.middleware';
 
 // input haro be service midim
 

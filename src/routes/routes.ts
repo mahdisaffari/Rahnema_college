@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { login, register, logout } from "../auth/controllers/auth.controller";
-import { auth} from "../auth/middleware/auth";
-import { getProfileHandler, updateProfileHandler } from "../profile/controller/profile.controller";
-import { validateProfileUpdateMiddleware } from "../profile/middleware/profile.middleware";
+import { login, register, logout } from "../modules/auth/auth.controller";
+import { auth} from "../modules/auth/auth.middleware";
 import { upload } from "../config/multer.config";
-import { getPostProfileHandler } from "../profile/post_profile/controller/getPostProfile.controller";
-import { createSetupPostHandler } from "../api_setupPost/controller/setupPost.controller";
-import { validateSetupPostMiddleware } from "../api_setupPost/middleware/setupPost.middleware";
+import { validateProfileUpdateMiddleware } from "../modules/profile/profile.middleware";
+import { getProfileHandler, updateProfileHandler } from "../modules/profile/profile.controller";
+import { getPostProfileHandler } from "../modules/profile/postProfile/postProfile.controller";
+import { validateSetupPostMiddleware } from "../modules/post/post.middleware";
+import { createSetupPostHandler } from "../modules/post/post.controller";
 
 const router = Router();
 

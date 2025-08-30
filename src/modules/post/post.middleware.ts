@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
-import { AuthRequest } from '../../auth/middleware/auth';
-import { validateCreatePost } from '../validators/setupPost.validator';
+import { validateCreatePost } from './post.validator';
+import { AuthRequest } from '../auth/auth.middleware';
 
 export function validateSetupPostMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
   const caption = req.body?.caption as string | undefined;

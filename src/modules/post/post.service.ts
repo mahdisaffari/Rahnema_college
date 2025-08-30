@@ -1,11 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import Minio from 'minio';
 import { minioClient } from '../../config/minio.config';
 
 const prisma = new PrismaClient();
 
-// این اسم باید تغییر کنه
-const BUCKET_NAME = 'rahnama';
+
+const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "rahnama";
 
 async function uploadBufferToMinIO(
   buffer: Buffer,

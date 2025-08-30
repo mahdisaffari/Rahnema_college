@@ -1,17 +1,82 @@
-/**
- * ghavanin input hay ke dar har fild bayad rayat beshe
- */
+// utils/validators.ts
+import { z } from "zod";
 
-export const isNonEmptyString = (v: unknown): v is string =>
-  typeof v === "string" && v.trim().length > 0;
+export const CreatePostSchema = z.object({
+  caption: z
+    .string()
+    .max(300, "کپشن باید رشته معتبر با حداکثر ۳۰۰ کاراکتر باشد")
+    .optional(),
+  images: z
+    .array(
+      z.object({
+        mimetype: z.string().refine((val) => val.startsWith("image/"), {
+          message: "همه فایل‌ها باید تصویری باشند",
+        }),
+        size: z.number().max(5 * 1024 * 1024, "حجم هر تصویر باید کمتر از ۵ مگابایت باشد"),
+      })
+    )
+    .max(5, "حداکثر ۵ تصویر مجاز است")
+    .min(1, "ارسال حداقل یک تصویر الزامی است"),
+});
 
-export const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+export const ProfileUpdateSchema = z.object({
+  firstname: z
+    .string()
+    .max(50, "نام باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
+    .refine((val) => val.trim().length > 0, "نام باید رشته غیرخالی باشد")
+    .optional(),
+  lastname: z
+    .string()
+    .max(50, "نام خانوادگی باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
+    .refine((val) => val.trim().length > 0, "نام خانوادگی باید رشته غیرخالی باشد")
+    .optional(),
+  bio: z
+    .string()
+    .max(500, "بیوگرافی باید رشته غیرخالی باشد (حداکثر 500 کاراکتر)")
+    .refine((val) => val.trim().length > 0, "بیوگرافی باید رشته غیرخالی باشد")
+    .optional(),
+  email: z
+    .string()
+    .email("ایمیل معتبر نیست")
+    .refine((val) => val.trim().length > 0, "ایمیل معتبر نیست")
+    .optional(),
+  password: z
+    .string()
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/,
+      "پسورد ضعیف است"
+    )
+    .optional(),
+  avatar: z
+    .object({
+      mimetype: z.string().refine((val) => val.startsWith("image/"), {
+        message: "فقط فایل‌های تصویری مجاز هستند",
+      }),
+      size: z.number().max(5 * 1024 * 1024, "سایز فایل باید کمتر از ۵ مگابایت باشد"),
+    })
+    .optional(),
+});
 
-export const isPassword = (s: string) =>
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/.test(s);
+export const RegisterSchema = z.object({
+  username: z
+    .string()
+    .min(5, "نام کاربری الزامی است و باید حداقل ۵ کاراکتر باشد")
+    .refine((val) => val.trim().length > 0, "نام کاربری الزامی است و باید حداقل ۵ کاراکتر باشد"),
+  email: z
+    .string()
+    .email("ایمیل معتبر الزامی است")
+    .refine((val) => val.trim().length > 0, "ایمیل معتبر الزامی است"),
+  password: z
+    .string()
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/,
+      "رمز عبور ضعیف است"
+    ),
+});
 
-export const normEmail = (e: string) => e.trim().toLowerCase();
+export const LoginSchema = z.object({
+  identifier: z.string().min(1, "شناسه الزامی است"),
+  password: z.string().min(1, "رمز عبور الزامی است"),
+});
 
-export const isValidUrl = (s: string) =>
-  /^https?:\/\/[^\s/$.?#].[^\s]*$/.test(s);
-
+export const normEmail = (email: string) => email.trim().toLowerCase();

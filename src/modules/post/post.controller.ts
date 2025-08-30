@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import { AuthRequest } from '../../auth/middleware/auth';
-import { CreatePostResponse } from '../../types/setupPost.types';
-import { createPostWithImages } from '../service/setupPost.service';
+import { CreatePostResponse } from './post.types';
+import { createPostWithImages } from './post.service';
+import { AuthRequest } from '../auth/auth.middleware';
 
 export async function createSetupPostHandler(req: AuthRequest, res: Response<CreatePostResponse>) {
   try {

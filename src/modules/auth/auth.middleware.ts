@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
-import { AuthUser } from "../../types/auth.types";
 import { Request, Response, NextFunction } from "express";
+import { AuthUser } from "./auth.types";
 
 /**
  * baresi token jwt dar har dakhst(login) agar jwt valide 

@@ -1,7 +1,7 @@
 import { Response } from 'express';
-import { AuthRequest } from '../../../auth/middleware/auth';
-import { getUserPosts } from '../service/getPostProfile.service';
-import {  getPostProfileApiResponse, PostResponseData } from '../../../types/getPostProfileResponse.types';
+import { getUserPosts } from './postProfile.service';
+import {  getPostProfileApiResponse, PostResponseData } from './postProfile.types';
+import { AuthRequest } from '../../auth/auth.middleware';
 
 
 export async function getPostProfileHandler(req: AuthRequest, res: Response<getPostProfileApiResponse<PostResponseData[]>>) {

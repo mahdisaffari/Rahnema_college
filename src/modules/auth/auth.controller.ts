@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
-import * as authService from "../services/auth.service";
-import { validateLogin, validateRegister } from "../validators/auth.validator";
-import { LoginRequest, RegisterRequest, RegisterResponse, LoginResponse } from "../../types/auth.types";
-import { setAuthCookies, clearAuthCookies } from "../../utils/jwt";
+import * as authService from "./auth.service";
+import { validateLogin, validateRegister } from "./auth.validator";
+import { clearAuthCookies, setAuthCookies } from "../../utils/jwt";
+import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "./auth.types";
+
+
 
 export const register = async (req: Request<{}, {}, RegisterRequest>, res: Response<RegisterResponse>) => {
   const error = validateRegister(req.body); 

@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { ProfileUser } from '../../types/profile.types';
+import { ProfileUser } from './profile.types';
 import { normEmail } from '../../utils/validators';
 import bcrypt from 'bcryptjs';
 import { cloudinary } from '../../config/cloudinary.config';
@@ -52,13 +52,11 @@ export async function updateProfile(
   }
 ): Promise<ProfileUser> {
   // ye obj misazm barye negah dari taghirat
-  // inja ye taghir dare ke any nabashe
-  const updateData: any = {
+  const updateData: Partial<ProfileUser & { passwordHash?: string }> = {
     firstname: data.firstname,
     lastname: data.lastname,
     bio: data.bio,
   };
-
   //agar email sakht 
   if (data.email) {
     const normalizedEmail = normEmail(data.email);
@@ -69,7 +67,7 @@ export async function updateProfile(
       throw new Error('ایمیل تکراری است');
     updateData.email = normalizedEmail; // ok bod update kon
   }
-   // agar pass jadid dad
+  // agar pass jadid dad
   if (data.password)
     // hash mishe
     updateData.passwordHash = await bcrypt.hash(data.password, 10);
