@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateProfileUpdate } from '../validators/profile.validator';
-import { AuthRequest } from '../../auth/middleware/auth';
-import { ProfileResponse } from '../../types/profile.types';
+import { validateProfileUpdate } from './profile.validator';
+import { ProfileResponse } from './profile.types';
+import { AuthRequest } from '../auth/auth.middleware';
 
 // inja amalan faghd vorodi haro ba vlidators valid bodaneshon baresi mishe
 export function validateProfileUpdateMiddleware(req: AuthRequest, res: Response<ProfileResponse>, next: NextFunction) {

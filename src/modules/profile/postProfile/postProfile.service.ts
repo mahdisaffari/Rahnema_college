@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { PostResponseData } from '../../../types/getPostProfileResponse.types';
+import { PostResponseData } from './postProfile.types';
 
 const prisma = new PrismaClient();
 
