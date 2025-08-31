@@ -26,7 +26,7 @@ export const register = async (username: string, email: string, password: string
 };
 
 export const login = async (identifier: string, password: string) => {
-  // اعتبارسنجی با اسکیمای متمرکز
+
   LoginSchema.parse({ identifier, password });
 
   const isEmailLogin = identifier.includes("@");
@@ -39,5 +39,5 @@ export const login = async (identifier: string, password: string) => {
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) throw new Error("اعتبارنامه‌های نامعتبر");
 
-  return signAccessToken({ id: user.id.toString(), username: user.username, email: user.email } as AuthUser);
+  return signAccessToken({ id: user.id, username: user.username, email: user.email } as AuthUser);
 };

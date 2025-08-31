@@ -2,15 +2,17 @@ import { Response } from 'express';
 import { CreatePostResponse, CreatePostRequest } from './post.types';
 import { createPostWithImages } from './post.service';
 import { AuthRequest } from '../auth/auth.middleware';
+import { handleError } from '../../utils/errorHandler';
 
 export async function createSetupPostHandler(
-  req: AuthRequest & { body: CreatePostRequest }, // مشخص کردن نوع body
+  req: AuthRequest,
   res: Response<CreatePostResponse>
 ) {
   try {
     const userId = req.user!.id;
-    const { caption } = req.body; // req.body : CreatePostRequest
-    const images = (req.files as Express.Multer.File[]) ?? [];
+    const { caption } = req.body as CreatePostRequest; 
+    const images = (req.files as Express.Multer.File[]) || [];
+
     const post = await createPostWithImages(userId, caption, images);
     return res.status(201).json({
       success: true,
@@ -22,9 +24,7 @@ export async function createSetupPostHandler(
         createdAt: post.createdAt.toISOString(),
       },
     });
-  } catch (error: any) {
-    return res.status(400).json({ success: false, message: error.message ?? 'خطا در ایجاد پست' });
+  } catch (error) {
+    return handleError(error, res, 'خطا در ایجاد پست', 400);
   }
 }
-
-

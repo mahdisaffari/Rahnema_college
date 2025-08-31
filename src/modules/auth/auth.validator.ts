@@ -5,7 +5,7 @@ import { LoginRequest, RegisterRequest } from "./auth.types";
 
 export const validateRegister = ({ username, email, password }: RegisterRequest): string | null => {
   try {
-    RegisterSchema.parse({ username, email, password });
+    const a = RegisterSchema.parse({ username, email, password });
     return null;
   } catch (error) {
     return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";
