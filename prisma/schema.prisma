@@ -9,35 +9,80 @@ datasource db {
 }
 
 model User {
-  id           String @id @default(uuid())
-  username     String @unique
-  email        String @unique
-  passwordHash String
-
-  firstname String?
-  lastname  String?
-  bio       String?
-  avatar    String?
-
-  posts Post[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  username      String   @unique
+  email         String   @unique
+  passwordHash  String
+  firstname     String?
+  lastname      String?
+  bio           String?
+  avatar        String?
+  posts         Post[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  followers     Follow[] @relation("Follower")
+  following     Follow[] @relation("Following")
+  postCount     Int      @default(0)
+  followerCount Int      @default(0)
+  followingCount Int     @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Post {
-  id        String      @id @default(uuid())
-  caption   String?
-  images    Image[]
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  createdAt DateTime @default(now())
+  id            String   @id @default(uuid())
+  caption       String?
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  images        PostImage[]
+  likes         Like[]
+  bookmarks     Bookmark[]
+  likeCount     Int      @default(0)
+  bookmarkCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
+model PostImage {
+  id            String   @id @default(uuid())
+  url           String
+  postId        String
+  post          Post     @relation(fields: [postId], references: [id])
+}
 
-model Image {
-  id           String   @id @default(uuid()) 
-  url          String
-  post         Post     @relation(fields: [postId], references: [id])
-  postId       String
+model Like {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  postId        String
+  post          Post     @relation(fields: [postId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Bookmark {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  postId        String
+  post          Post     @relation(fields: [postId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+}
+
+model Follow {
+  id            String   @id @default(uuid())
+  followerId    String
+  followingId   String
+  follower      User     @relation("Follower", fields: [followerId], references: [id])
+  following     User     @relation("Following", fields: [followingId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
 }
