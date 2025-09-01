@@ -1,12 +1,26 @@
 import { z } from "zod";
-import { CreatePostSchema } from "../../utils/validators";
+import { CreatePostSchema, extractMentions, validateMentions } from "../../utils/validators";
 
-
-export const validateCreatePost = (data: { caption?: string; images?: Express.Multer.File[] }): string | null => {
+export const validateImages = (data: { images?: Express.Multer.File[] }): string | null => {
   try {
-    CreatePostSchema.parse(data);
+   
+    CreatePostSchema.pick({ images: true }).parse(data);
     return null;
   } catch (error) {
-    return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";
+    return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی تصاویر";
   }
 };
+
+export const validateCaption = (data: { caption?: string }): string | null => {
+  try {
+    CreatePostSchema.pick({ caption: true }).parse(data);
+    return null;
+  } catch (error) {
+    return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی کپشن";
+  }
+};
+
+export async function validateMentionsFromInput(caption: string): Promise<string | null> {
+  const mentions = extractMentions(caption || "");
+  return await validateMentions(mentions);
+}

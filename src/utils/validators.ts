@@ -1,5 +1,7 @@
-// utils/validators.ts
+
 import { z } from "zod";
+import { PrismaClient } from "@prisma/client";
+const prisma = new PrismaClient();
 
 export const CreatePostSchema = z.object({
   caption: z
@@ -19,6 +21,29 @@ export const CreatePostSchema = z.object({
     .min(1, "ارسال حداقل یک تصویر الزامی است"),
 });
 
+export function extractMentions(caption: string): string[] {
+  const mentionRegex = /@(\w+)/g;
+  const matches = caption.match(mentionRegex) || [];
+  return matches.map((m) => m.slice(1)); 
+}
+
+export async function validateMentions(usernames: string[]): Promise<string | null> {
+  if (usernames.length === 0) return null; 
+  try {
+    const existingUsers = await prisma.user.findMany({
+      where: { username: { in: usernames } },
+      select: { username: true },
+    });
+    const existingUsernames = existingUsers.map((u) => u.username);
+    const invalidMentions = usernames.filter((u) => !existingUsernames.includes(u));
+    if (invalidMentions.length > 0) {
+      return `منشن‌های نامعتبر: ${invalidMentions.join(", ")}`;
+    }
+    return null;
+  } catch {
+    return "خطا در چک منشن‌ها";
+  }
+}
 export const ProfileUpdateSchema = z.object({
   firstname: z
     .string()

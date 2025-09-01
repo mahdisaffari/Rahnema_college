@@ -8,7 +8,6 @@ import { AuthUser } from "./auth.types";
 const prisma = new PrismaClient();
 
 export const register = async (username: string, email: string, password: string) => {
-  // اعتبارسنجی با اسکیمای متمرکز
   RegisterSchema.parse({ username, email, password });
 
   const [byUser, byEmail] = await Promise.all([
