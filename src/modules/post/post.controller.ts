@@ -1,6 +1,6 @@
-import { Response } from 'express';
-import { CreatePostResponse, CreatePostRequest } from './post.types';
-import { createPostWithImages } from './post.service';
+import { Request, Response } from 'express';
+import { CreatePostResponse, PostApiResponse, CreatePostRequest } from './post.types';
+import { createPostWithImages, getPostById } from './post.service';
 import { AuthRequest } from '../auth/auth.middleware';
 import { handleError } from '../../utils/errorHandler';
 
@@ -47,5 +47,21 @@ export async function createSetupPostHandler(req: AuthRequest, res: Response<Cre
     });
   } catch (error) {
     return handleError(error, res, 'خطا در ایجاد پست', 400);
+  }
+}
+
+export async function getPostHandler(req: AuthRequest, res: Response<PostApiResponse>) {
+  try {
+    const postId = req.params.id;
+    const currentUserId = req.user?.id; 
+    const post = await getPostById(postId, currentUserId);
+    if (!post) return res.status(404).json({ success: false, message: 'پست یافت نشد' });
+    return res.json({
+      success: true,
+      message: 'پست با موفقیت دریافت شد',
+      data: post,
+    });
+  } catch (error) {
+    return handleError(error, res, 'خطا در دریافت پست');
   }
 }

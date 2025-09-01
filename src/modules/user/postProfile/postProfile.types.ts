@@ -1,9 +1,9 @@
-
-// tarif type dade haye post
 export interface PostResponseData {
   id: string;
   caption: string | null;
   images: { url: string }[];
+  likeCount: number;
+  bookmarkCount: number;
 }
 
 export interface getPostProfileApiResponse<T> {

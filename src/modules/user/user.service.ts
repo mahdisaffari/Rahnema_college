@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { ProfileUser } from './profile.types';
+import { ProfileResponse, UserResponse } from './user.types';
 import { normEmail } from '../../utils/validators';
 import bcrypt from 'bcryptjs';
 import { cloudinary } from '../../config/cloudinary.config';
@@ -7,10 +7,10 @@ import { cloudinary } from '../../config/cloudinary.config';
 const prisma = new PrismaClient();
 
 // ye user migire profile ro mide bedone pass
-export async function getProfile(userId: string): Promise<ProfileUser | null> {
+export async function getProfile(userId: string): Promise<ProfileResponse | null> {
   return prisma.user.findUnique({ // faghad ye karbar ba in id bar migarde
     where: { id: userId },
-    select: { // fild haro moshakhas mikonim
+    select: {// fild haro moshakhas mikonim
       id: true,
       username: true,
       email: true,
@@ -18,8 +18,30 @@ export async function getProfile(userId: string): Promise<ProfileUser | null> {
       lastname: true,
       bio: true,
       avatar: true,
+      postCount: true,
+      followerCount: true,
+      followingCount: true,
     },
   });
+}
+
+export async function getUserByUsername(username: string): Promise<UserResponse | null> {
+  const user = await prisma.user.findUnique({
+    where: { username },
+    select: {
+      id: true,
+      username: true,
+      firstname: true,
+      lastname: true,
+      bio: true,
+      avatar: true,
+      postCount: true,
+      followerCount: true,
+      followingCount: true,
+    },
+  });
+  if (!user) return null;
+  return user;
 }
 
 
@@ -50,32 +72,30 @@ export async function updateProfile(
     email?: string;
     password?: string;
   }
-): Promise<ProfileUser> {
-  // ye obj misazm barye negah dari taghirat
-  const updateData: Partial<ProfileUser & { passwordHash?: string }> = {
+): Promise<ProfileResponse> {
+    // ye obj misazm barye negah dari taghirat
+  const updateData: Partial<ProfileResponse & { passwordHash?: string }> = {
     firstname: data.firstname,
     lastname: data.lastname,
     bio: data.bio,
   };
-  //agar email sakht 
+  //agar email sakht
   if (data.email) {
     const normalizedEmail = normEmail(data.email);
-    if ( // tekrai nabashe
+    if (// tekrai nabashe
       (await prisma.user.findUnique({ where: { email: normalizedEmail } }))?.id !==
       userId
     )
       throw new Error('ایمیل تکراری است');
-    updateData.email = normalizedEmail; // ok bod update kon
+    updateData.email = normalizedEmail;  // ok bod update kon
   }
   // agar pass jadid dad
   if (data.password)
     // hash mishe
     updateData.passwordHash = await bcrypt.hash(data.password, 10);
-
-  // ax upload shod...
   if (data.avatar)
-    updateData.avatar = await uploadAvatar(userId, data.avatar);
 
+    updateData.avatar = await uploadAvatar(userId, data.avatar);
   // zakhire taghirat dar db
   return prisma.user.update({
     where: { id: userId },
@@ -88,6 +108,10 @@ export async function updateProfile(
       lastname: true,
       bio: true,
       avatar: true,
+      postCount: true,
+      followerCount: true,
+      followingCount: true,
     },
   });
 }
+

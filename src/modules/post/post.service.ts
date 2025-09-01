@@ -1,8 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { minioClient } from '../../config/minio.config';
+import { PostResponse } from './post.types';
 
 const prisma = new PrismaClient();
-
 
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "rahnama";
 
@@ -12,7 +12,6 @@ async function uploadBufferToMinIO(
   folder: string = 'posts'
 ): Promise<string> {
   const objectName = `${folder}/${Date.now()}-${filename}`;
-  
   try {
     await minioClient.putObject(BUCKET_NAME, objectName, buffer);
     const url = `${process.env.MINIO_ENDPOINT || 'localhost'}:${process.env.MINIO_PORT || '9000'}/${BUCKET_NAME}/${objectName}`;
@@ -54,5 +53,39 @@ export async function createPostWithImages(
     caption: created.caption,
     images: created.images.map((img) => ({ id: img.id, url: img.url })),
     createdAt: created.createdAt,
+  };
+}
+
+export async function getPostById(postId: string, currentUserId?: string): Promise<PostResponse | null> {
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+    select: {
+      id: true,
+      caption: true,
+      images: { select: { id: true, url: true } },
+      createdAt: true,
+      likeCount: true,
+      bookmarkCount: true,
+      user: {
+        select: {
+          id: true,
+          username: true,
+          firstname: true,
+          lastname: true,
+          avatar: true,
+        },
+      },
+    },
+  });
+  if (!post) return null;
+  return {
+    id: post.id,
+    caption: post.caption,
+    images: post.images,
+    createdAt: post.createdAt.toISOString(),
+    likeCount: post.likeCount,
+    bookmarkCount: post.bookmarkCount,
+    user: post.user,
+    isOwner: currentUserId ? post.user.id === currentUserId : false,
   };
 }
