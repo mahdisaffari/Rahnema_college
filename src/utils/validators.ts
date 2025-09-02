@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
@@ -37,13 +36,14 @@ export async function validateMentions(usernames: string[]): Promise<string | nu
     const existingUsernames = existingUsers.map((u) => u.username);
     const invalidMentions = usernames.filter((u) => !existingUsernames.includes(u));
     if (invalidMentions.length > 0) {
-      return `منشن‌های نامعتبر: ${invalidMentions.join(", ")}`;
+      return `چنین یوزری نداریم: ${invalidMentions.join(", ")}`;
     }
     return null;
   } catch {
     return "خطا در چک منشن‌ها";
   }
 }
+
 export const ProfileUpdateSchema = z.object({
   firstname: z
     .string()

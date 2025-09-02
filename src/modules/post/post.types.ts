@@ -43,3 +43,9 @@ export interface CreatePostResponse {
   message: string;
   data?: PostDTO;
 }
+
+export interface ValidateAllResponse {
+  success: boolean;
+  message: string;
+  data?: { images?: string | null; caption?: string | null; mentions?: string | null };
+}

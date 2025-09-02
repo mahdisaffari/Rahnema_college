@@ -1,32 +1,9 @@
 import { Request, Response } from 'express';
-import { CreatePostResponse, PostApiResponse, CreatePostRequest } from './post.types';
+import { CreatePostResponse, PostApiResponse, CreatePostRequest, ValidateAllResponse } from './post.types';
 import { createPostWithImages, getPostById } from './post.service';
 import { AuthRequest } from '../auth/auth.middleware';
 import { handleError } from '../../utils/errorHandler';
 
-export async function validateImagesHandler(req: AuthRequest, res: Response) {
-  try {
-    return res.json({ success: true, message: 'تصاویر معتبر هستند' });
-  } catch (error) {
-    return handleError(error, res, 'خطا در اعتبارسنجی تصاویر', 400);
-  }
-}
-
-export async function validateCaptionHandler(req: AuthRequest, res: Response) {
-  try {
-    return res.json({ success: true, message: 'کپشن معتبر است' });
-  } catch (error) {
-    return handleError(error, res, 'خطا در اعتبارسنجی کپشن', 400);
-  }
-}
-
-export async function validateMentionsHandler(req: AuthRequest, res: Response) {
-  try {
-    return res.json({ success: true, message: 'منشن‌ها معتبر هستند' });
-  } catch (error) {
-    return handleError(error, res, 'خطا در اعتبارسنجی منشن‌ها', 400);
-  }
-}
 
 export async function createSetupPostHandler(req: AuthRequest, res: Response<CreatePostResponse>) {
   try {
@@ -53,7 +30,7 @@ export async function createSetupPostHandler(req: AuthRequest, res: Response<Cre
 export async function getPostHandler(req: AuthRequest, res: Response<PostApiResponse>) {
   try {
     const postId = req.params.id;
-    const currentUserId = req.user?.id; 
+    const currentUserId = req.user?.id;
     const post = await getPostById(postId, currentUserId);
     if (!post) return res.status(404).json({ success: false, message: 'پست یافت نشد' });
     return res.json({
