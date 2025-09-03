@@ -13,6 +13,7 @@ export interface PostDTO {
   caption: string | null;
   images: PostImageDTO[];
   createdAt: string;
+  mentions?: { userId: string; username: string }[]; 
 }
 
 export interface PostResponse {
@@ -29,7 +30,8 @@ export interface PostResponse {
     lastname: string | null;
     avatar: string | null;
   };
-  isOwner?: boolean; 
+  isOwner?: boolean;
+  mentions?: { userId: string; username: string }[]; 
 }
 
 export interface PostApiResponse {

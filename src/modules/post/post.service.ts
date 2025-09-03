@@ -1,12 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { minioClient } from '../../config/minio.config';
 import { PostResponse } from './post.types';
+import { extractMentions } from '../../utils/validators';
 
 const prisma = new PrismaClient();
 
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "rahnama";
 
-async function uploadBufferToMinIO(
+export async function uploadBufferToMinIO(
   buffer: Buffer,
   filename: string,
   folder: string = 'posts'
@@ -25,12 +26,7 @@ export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
   images: Express.Multer.File[]
-): Promise<{
-  id: string;
-  caption: string | null;
-  images: { id: string; url: string }[];
-  createdAt: Date;
-}> {
+): Promise<PostResponse> { 
   if (!images || images.length === 0) throw new Error('No images provided');
 
   const uploadedUrls: string[] = await Promise.all(
@@ -45,14 +41,38 @@ export async function createPostWithImages(
         create: uploadedUrls.map((url) => ({ url })),
       },
     },
-    include: { images: true },
+    include: { images: true, user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } } },
+  });
+
+ 
+  if (caption) {
+    const mentions = extractMentions(caption);
+    if (mentions.length > 0) {
+      const users = await prisma.user.findMany({
+        where: { username: { in: mentions } },
+        select: { id: true },
+      });
+      await prisma.mention.createMany({
+        data: users.map((user) => ({ postId: created.id, userId: user.id })),
+      });
+    }
+  }
+
+  const mentionUsers = await prisma.mention.findMany({
+    where: { postId: created.id },
+    include: { user: { select: { id: true, username: true } } },
   });
 
   return {
     id: created.id,
     caption: created.caption,
     images: created.images.map((img) => ({ id: img.id, url: img.url })),
-    createdAt: created.createdAt,
+    createdAt: created.createdAt.toISOString(),
+    likeCount: created.likeCount || 0,
+    bookmarkCount: created.bookmarkCount || 0,
+    user: created.user,
+    isOwner: true,
+    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
   };
 }
 
@@ -75,6 +95,9 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
           avatar: true,
         },
       },
+      mentions: { 
+        include: { user: { select: { id: true, username: true } } },
+      },
     },
   });
   if (!post) return null;
@@ -87,5 +110,6 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     bookmarkCount: post.bookmarkCount,
     user: post.user,
     isOwner: currentUserId ? post.user.id === currentUserId : false,
+    mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
   };
 }
