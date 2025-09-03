@@ -11,6 +11,7 @@ import { bookmarkPostHandler } from "../modules/post/bookmark/bookmark.controlle
 import { followUserHandler } from "../modules/user/follow_unfollow/follow.controller";
 import { getPostProfileHandler, getPostsByUsernameHandler } from "../modules/user/postProfile/postProfile.controller";
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
+import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
 
 const router = Router();
 
@@ -29,6 +30,9 @@ router.get("/posts/:id", auth, getPostHandler);
 router.put("/posts/:id", auth, upload.array("images", 5), validateEditPostMiddleware, editPostHandler); 
 router.post("/posts/:id/bookmark", auth, bookmarkPostHandler);
 router.delete("/posts/:id/bookmark", auth, bookmarkPostHandler);
+router.post("/posts/:id/like", auth, likePostHandler);
+router.delete("/posts/:id/like", auth, likePostHandler);
+//router.get("/posts/:id/likes", auth, getPostLikesCountHandler);
 
 router.post("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
 router.delete("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);

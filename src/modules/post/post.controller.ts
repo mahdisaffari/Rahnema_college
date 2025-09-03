@@ -19,7 +19,7 @@ export async function createSetupPostHandler(req: AuthRequest, res: Response<Cre
         id: post.id,
         caption: post.caption,
         images: post.images,
-        createdAt: post.createdAt.toISOString(),
+        createdAt: post.createdAt,
       },
     });
   } catch (error) {
