@@ -61,24 +61,39 @@ export async function uploadAvatar(
   });
 }
 
+//public id ro az yrl avatar mikeshan biron
+function extractPublicIdFromUrl(url: string): string {
+  const parts = url.split('/');
+  const filename = parts[parts.length - 1].split('.')[0];
+  return `avatars/${filename}`;
+}
+//hazfe avatar az Cloudinary
+async function deleteAvatarFromCloudinary(publicId: string): Promise<void> {
+  await new Promise((resolve, reject) => {
+    cloudinary.uploader.destroy(publicId, (error, result) => {
+      if (error) reject(new Error('خطا در حذف اواتار از Cloudinary'));
+      resolve(result);
+    });
+  });
+}
 
 export async function updateProfile(
   userId: string,
   data: {
-    firstname?: string;
-    lastname?: string;
-    bio?: string;
-    avatar?: Express.Multer.File;
+    firstname?: string | null;
+    lastname?: string | null;
+    bio?: string | null;
+    avatar?: Express.Multer.File | null;
     email?: string;
     password?: string;
   }
 ): Promise<ProfileResponse> {
     // ye obj misazm barye negah dari taghirat
-  const updateData: Partial<ProfileResponse & { passwordHash?: string }> = {
-    firstname: data.firstname,
-    lastname: data.lastname,
-    bio: data.bio,
-  };
+  const updateData: Partial<ProfileResponse & { passwordHash?: string }> = {};
+
+  if (data.firstname !== undefined) updateData.firstname = data.firstname;
+  if (data.lastname !== undefined) updateData.lastname = data.lastname;
+  if (data.bio !== undefined) updateData.bio = data.bio;
   //agar email sakht
   if (data.email) {
     const normalizedEmail = normEmail(data.email);
@@ -93,9 +108,22 @@ export async function updateProfile(
   if (data.password)
     // hash mishe
     updateData.passwordHash = await bcrypt.hash(data.password, 10);
-  if (data.avatar)
-
-    updateData.avatar = await uploadAvatar(userId, data.avatar);
+  if (data.avatar !== undefined) {
+    if (data.avatar === null) {
+     //hazfe avatar ghabli az Cloudinary
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { avatar: true },
+      });
+      if (currentUser?.avatar) {
+        const publicId = extractPublicIdFromUrl(currentUser.avatar);
+        await deleteAvatarFromCloudinary(publicId);
+      }
+      updateData.avatar = null;
+    } else if (data.avatar) {
+      updateData.avatar = await uploadAvatar(userId, data.avatar);
+    }
+  }
   // zakhire taghirat dar db
   return prisma.user.update({
     where: { id: userId },
@@ -114,4 +142,3 @@ export async function updateProfile(
     },
   });
 }
-

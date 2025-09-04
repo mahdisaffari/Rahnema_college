@@ -46,19 +46,28 @@ export async function validateMentions(usernames: string[]): Promise<string | nu
 
 export const ProfileUpdateSchema = z.object({
   firstname: z
-    .string()
-    .max(50, "نام باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
-    .refine((val) => val.trim().length > 0, "نام باید رشته غیرخالی باشد")
+    .union([
+      z.string()
+        .max(50, "نام باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
+        .refine((val) => val.trim().length > 0, "نام باید رشته غیرخالی باشد"),
+      z.null(),
+    ])
     .optional(),
   lastname: z
-    .string()
-    .max(50, "نام خانوادگی باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
-    .refine((val) => val.trim().length > 0, "نام خانوادگی باید رشته غیرخالی باشد")
+    .union([
+      z.string()
+        .max(50, "نام خانوادگی باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
+        .refine((val) => val.trim().length > 0, "نام خانوادگی باید رشته غیرخالی باشد"),
+      z.null(),
+    ])
     .optional(),
   bio: z
-    .string()
-    .max(500, "بیوگرافی باید رشته غیرخالی باشد (حداکثر 500 کاراکتر)")
-    .refine((val) => val.trim().length > 0, "بیوگرافی باید رشته غیرخالی باشد")
+    .union([
+      z.string()
+        .max(500, "بیوگرافی باید رشته غیرخالی باشد (حداکثر 500 کاراکتر)")
+        .refine((val) => val.trim().length > 0, "بیوگرافی باید رشته غیرخالی باشد"),
+      z.null(),
+    ])
     .optional(),
   email: z
     .string()
@@ -73,12 +82,15 @@ export const ProfileUpdateSchema = z.object({
     )
     .optional(),
   avatar: z
-    .object({
-      mimetype: z.string().refine((val) => val.startsWith("image/"), {
-        message: "فقط فایل‌های تصویری مجاز هستند",
+    .union([
+      z.object({
+        mimetype: z.string().refine((val) => val.startsWith("image/"), {
+          message: "فقط فایل‌های تصویری مجاز هستند",
+        }),
+        size: z.number().max(5 * 1024 * 1024, "سایز فایل باید کمتر از ۵ مگابایت باشد"),
       }),
-      size: z.number().max(5 * 1024 * 1024, "سایز فایل باید کمتر از ۵ مگابایت باشد"),
-    })
+      z.null(),
+    ])
     .optional(),
 });
 
