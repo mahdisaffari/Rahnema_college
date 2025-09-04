@@ -1,7 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { minioClient } from '../../config/minio.config';
 import { PostResponse } from './post.types';
-import { extractMentions } from '../../utils/validators';
 
 const prisma = new PrismaClient();
 
@@ -25,8 +24,9 @@ export async function uploadBufferToMinIO(
 export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
-  images: Express.Multer.File[]
-): Promise<PostResponse> { 
+  images: Express.Multer.File[],
+  mentions: string[] | undefined // ورودی جدید برای منشن‌ها
+): Promise<PostResponse> {
   if (!images || images.length === 0) throw new Error('No images provided');
 
   const uploadedUrls: string[] = await Promise.all(
@@ -44,18 +44,19 @@ export async function createPostWithImages(
     include: { images: true, user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } } },
   });
 
- 
-  if (caption) {
-    const mentions = extractMentions(caption);
-    if (mentions.length > 0) {
-      const users = await prisma.user.findMany({
-        where: { username: { in: mentions } },
-        select: { id: true },
-      });
-      await prisma.mention.createMany({
-        data: users.map((user) => ({ postId: created.id, userId: user.id })),
-      });
-    }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { postCount: { increment: 1 } },
+  });
+
+  if (mentions && mentions.length > 0) {
+    const users = await prisma.user.findMany({
+      where: { username: { in: mentions } },
+      select: { id: true },
+    });
+    await prisma.mention.createMany({
+      data: users.map((user) => ({ postId: created.id, userId: user.id })),
+    });
   }
 
   const mentionUsers = await prisma.mention.findMany({
@@ -95,7 +96,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
           avatar: true,
         },
       },
-      mentions: { 
+      mentions: {
         include: { user: { select: { id: true, username: true } } },
       },
     },

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { EditPostResponse, EditPostRequest } from './editPost.types';
 import { editPost } from './editPost.service';
 import { AuthRequest } from '../../auth/auth.middleware';
@@ -8,10 +8,10 @@ export async function editPostHandler(req: AuthRequest, res: Response<EditPostRe
   try {
     const userId = req.user!.id;
     const postId = req.params.id;
-    const { caption, removeImageIds } = req.body as EditPostRequest;
+    const { caption, removeImageIds, mentions } = req.body as EditPostRequest;
     const images = (req.files as Express.Multer.File[]) || [];
 
-    const updatedPost = await editPost(postId, userId, caption, images, removeImageIds);
+    const updatedPost = await editPost(postId, userId, caption, images, removeImageIds, mentions);
     return res.json({
       success: true,
       message: 'پست با موفقیت ویرایش شد',

@@ -4,10 +4,11 @@ export interface EditPostRequest {
   caption?: string;
   images?: Express.Multer.File[];
   removeImageIds?: string[];
+  mentions?: string[]; 
 }
 
 export interface EditPostResponse {
   success: boolean;
   message: string;
-  data?: PostResponse; 
+  data?: PostResponse;
 }

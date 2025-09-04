@@ -1,6 +1,7 @@
 export interface CreatePostRequest {
   caption?: string;
   images?: Express.Multer.File[];
+  mentions?: string[]; 
 }
 
 export interface PostImageDTO {
@@ -13,7 +14,7 @@ export interface PostDTO {
   caption: string | null;
   images: PostImageDTO[];
   createdAt: string;
-  mentions?: { userId: string; username: string }[]; 
+  mentions?: { userId: string; username: string }[];
 }
 
 export interface PostResponse {
@@ -31,7 +32,7 @@ export interface PostResponse {
     avatar: string | null;
   };
   isOwner?: boolean;
-  mentions?: { userId: string; username: string }[]; 
+  mentions?: { userId: string; username: string }[];
 }
 
 export interface PostApiResponse {

@@ -2,7 +2,6 @@ import { PrismaClient } from '@prisma/client';
 import { minioClient } from '../../../config/minio.config';
 import { PostResponse } from '../post.types';
 import { uploadBufferToMinIO } from '../post.service';
-import { extractMentions } from '../../../utils/validators';
 
 const prisma = new PrismaClient();
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "rahnama";
@@ -12,10 +11,10 @@ export async function editPost(
   userId: string,
   caption: string | undefined,
   images: Express.Multer.File[] | undefined,
-  removeImageIds: string[] | undefined
+  removeImageIds: string[] | undefined,
+  mentions: string[] | undefined // ورودی جدید برای منشن‌ها
 ): Promise<PostResponse> {
-
-    const post = await prisma.post.findUnique({
+  const post = await prisma.post.findUnique({
     where: { id: postId },
     include: { user: true, images: true },
   });
@@ -46,19 +45,15 @@ export async function editPost(
   }
 
   await prisma.mention.deleteMany({ where: { postId } });
-  if (caption) {
-    const mentions = extractMentions(caption);
-    if (mentions.length > 0) {
-      const users = await prisma.user.findMany({
-        where: { username: { in: mentions } },
-        select: { id: true },
-      });
-      await prisma.mention.createMany({
-        data: users.map((user) => ({ postId, userId: user.id })),
-      });
-    }
+  if (mentions && mentions.length > 0) {
+    const users = await prisma.user.findMany({
+      where: { username: { in: mentions } },
+      select: { id: true },
+    });
+    await prisma.mention.createMany({
+      data: users.map((user) => ({ postId, userId: user.id })),
+    });
   }
-
 
   const updatedPost = await prisma.post.update({
     where: { id: postId },

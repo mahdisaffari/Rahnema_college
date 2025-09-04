@@ -1,14 +1,19 @@
 import { z } from 'zod';
-import { CreatePostSchema, extractMentions, validateMentions } from '../../../utils/validators';
+import { CreatePostSchema } from '../../../utils/validators';
+import { PrismaClient } from '@prisma/client';
 
-export const EditPostSchema = CreatePostSchema.partial(); // فیلدها اختیاری
+const prisma = new PrismaClient();
 
-export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[]; removeImageIds?: string[] })
+export const EditPostSchema = CreatePostSchema.partial().extend({
+  mentions: z.array(z.string()).optional(), 
+});
+
+export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[]; removeImageIds?: string[]; mentions?: string[] })
 : Promise<{ images?: string | null; caption?: string | null; mentions?: string | null; removeImageIds?: string | null }> => {
   const errors = {
     images: validateImages({ images: data.images }),
     caption: validateCaption({ caption: data.caption }),
-    mentions: await validateMentionsFromInput(data.caption || ""),
+    mentions: await validateMentions(data.mentions || []),
     removeImageIds: validateRemoveImageIds({ removeImageIds: data.removeImageIds }),
   };
   return errors;
@@ -32,9 +37,22 @@ function validateCaption(data: { caption?: string }): string | null {
   }
 }
 
-async function validateMentionsFromInput(caption: string): Promise<string | null> {
-  const mentions = extractMentions(caption || "");
-  return await validateMentions(mentions);
+async function validateMentions(mentions: string[]): Promise<string | null> {
+  if (!mentions || mentions.length === 0) return null;
+  try {
+    const users = await prisma.user.findMany({
+      where: { username: { in: mentions } },
+      select: { username: true },
+    });
+    const foundUsernames = users.map(user => user.username);
+    const invalidMentions = mentions.filter(mention => !foundUsernames.includes(mention));
+    if (invalidMentions.length > 0) {
+      return `کاربران زیر یافت نشدند: ${invalidMentions.join(', ')}`;
+    }
+    return null;
+  } catch (error) {
+    return "خطا در اعتبارسنجی منشن‌ها";
+  }
 }
 
 function validateRemoveImageIds(data: { removeImageIds?: string[] }): string | null {
