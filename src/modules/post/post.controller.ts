@@ -8,10 +8,10 @@ import { handleError } from '../../utils/errorHandler';
 export async function createSetupPostHandler(req: AuthRequest, res: Response<CreatePostResponse>) {
   try {
     const userId = req.user!.id;
-    const { caption } = req.body as CreatePostRequest;
+    const { caption, mentions } = req.body as CreatePostRequest;
     const images = (req.files as Express.Multer.File[]) || [];
 
-    const post = await createPostWithImages(userId, caption, images);
+    const post = await createPostWithImages(userId, caption, images, mentions);
     return res.status(201).json({
       success: true,
       message: 'پست با موفقیت ایجاد شد',

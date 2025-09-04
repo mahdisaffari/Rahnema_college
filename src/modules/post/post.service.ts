@@ -25,7 +25,7 @@ export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
   images: Express.Multer.File[],
-  mentions: string[] | undefined // ورودی جدید برای منشن‌ها
+  mentions: string[] | undefined 
 ): Promise<PostResponse> {
   if (!images || images.length === 0) throw new Error('No images provided');
 
