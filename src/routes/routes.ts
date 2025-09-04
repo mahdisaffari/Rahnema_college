@@ -12,6 +12,7 @@ import { followUserHandler } from "../modules/user/follow_unfollow/follow.contro
 import { getPostProfileHandler, getPostsByUsernameHandler } from "../modules/user/postProfile/postProfile.controller";
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
+import { getFollowersHandler, getFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
 
 const router = Router();
 
@@ -36,5 +37,8 @@ router.delete("/posts/:id/like", auth, likePostHandler);
 
 router.post("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
 router.delete("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
+
+router.get("/users/followers", auth, getFollowersHandler);
+router.get("/users/followings", auth, getFollowingsHandler)
 
 export default router;
