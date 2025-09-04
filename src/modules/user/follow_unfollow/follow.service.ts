@@ -19,8 +19,8 @@ export async function toggleFollow(followerId: string, followingUsername: string
     await prisma.follow.delete({
       where: { followerId_followingId: { followerId, followingId } },
     });
-    await prisma.user.updateMany({
-      where: { id: { in: [followerId, followingId] } },
+    await prisma.user.update({
+      where: { id: followerId },
       data: { followingCount: { decrement: 1 } },
     });
     await prisma.user.update({
