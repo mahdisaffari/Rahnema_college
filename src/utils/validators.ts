@@ -26,6 +26,48 @@ export function extractMentions(caption: string): string[] {
   return matches.map((m) => m.slice(1)); 
 }
 
+export const GetUserPostsSchema = z.object({
+  username: z
+    .string()
+    .min(1, "نام کاربری الزامی است")
+    .refine((val) => val.trim().length > 0, "نام کاربری نمی‌تواند خالی باشد"),
+  page: z.number().int().positive("شماره صفحه باید عدد مثبت باشد").optional().default(1),
+  limit: z
+    .number()
+    .int()
+    .positive("تعداد باید عدد مثبت باشد")
+    .max(100, "حداکثر تعداد پست‌ها ۱۰۰ است")
+    .optional()
+    .default(10),
+});
+
+export async function validateGetUserPosts(data: {
+  username: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ username?: string | null; page?: string | null; limit?: string | null }> {
+  try {
+    GetUserPostsSchema.parse(data);
+
+    const user = await prisma.user.findUnique({
+      where: { username: data.username },
+    });
+    if (!user) {
+      return { username: `کاربر با نام کاربری ${data.username} یافت نشد` };
+    }
+
+    return { username: null, page: null, limit: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce(
+        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
+        {}
+      );
+    }
+    return { username: "خطا در اعتبارسنجی" };
+  }
+}
+
 export async function validateMentions(usernames: string[]): Promise<string | null> {
   if (usernames.length === 0) return null; 
   try {

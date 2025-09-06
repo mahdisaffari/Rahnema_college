@@ -5,10 +5,11 @@ import { getPostProfileApiResponse, PostResponseData } from './postProfile.types
 import { AuthRequest } from '../../auth/auth.middleware';
 import { handleError } from '../../../utils/errorHandler';
 
+// post haye karbare login shode
 export async function getPostProfileHandler(req: AuthRequest, res: Response<getPostProfileApiResponse<PostResponseData[]>>) {
   try {
-    const userId = req.user!.id;
-    const posts = await getUserPosts(userId);
+    const userId = req.user!.id; //id usero migirim
+    const posts = await getUserPosts(userId); // tamam postash
     return res.json({
       success: true,
       message: posts.length ? 'پست‌ها دریافت شدند' : 'هیچ پستی یافت نشد',
@@ -19,10 +20,10 @@ export async function getPostProfileHandler(req: AuthRequest, res: Response<getP
   }
 }
 
-
+// baraye gereftan post haye har karbar ba username
 export async function getPostsByUsernameHandler(req: Request, res: Response<getPostProfileApiResponse<PostResponseData[]>>) {
   try {
-    const username = req.params.username;
+    const username = req.params.username; // url ke karbar darkhst dade 
     const posts = await getPostsByUsername(username);
     return res.json({
       success: true,

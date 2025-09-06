@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { CreatePostResponse, PostApiResponse, CreatePostRequest, ValidateAllResponse } from './post.types';
-import { createPostWithImages, getPostById } from './post.service';
+import { CreatePostResponse, PostApiResponse, CreatePostRequest, ValidateAllResponse, UserPostsResponse } from './post.types';
+import { createPostWithImages, getPostById, getUserPosts } from './post.service';
 import { AuthRequest } from '../auth/auth.middleware';
 import { handleError } from '../../utils/errorHandler';
 
@@ -40,5 +40,25 @@ export async function getPostHandler(req: AuthRequest, res: Response<PostApiResp
     });
   } catch (error) {
     return handleError(error, res, 'خطا در دریافت پست');
+  }
+}
+
+export async function getUserPostsHandler(req: AuthRequest, res: Response<UserPostsResponse>) {
+  try {
+    const { username } = req.params;
+    const currentUserId = req.user?.id;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const result = await getUserPosts(username, currentUserId, page, limit);
+    if (!result) return res.status(404).json({ success: false, message: 'کاربر یافت نشد' });
+
+    return res.json({
+      success: true,
+      message: 'پست‌های کاربر با موفقیت دریافت شد',
+      data: result,
+    });
+  } catch (error) {
+    return handleError(error, res, 'خطا در دریافت پست‌های کاربر');
   }
 }

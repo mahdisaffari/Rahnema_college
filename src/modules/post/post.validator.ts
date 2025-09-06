@@ -33,3 +33,4 @@ async function validateMentionsFromInput(caption: string): Promise<string | null
   const mentions = extractMentions(caption || "");
   return await validateMentions(mentions);
 }
+

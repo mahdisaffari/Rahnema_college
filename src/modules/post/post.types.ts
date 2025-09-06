@@ -52,3 +52,19 @@ export interface ValidateAllResponse {
   message: string;
   data?: { images?: string | null; caption?: string | null; mentions?: string | null };
 }
+
+export interface UserPostsResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    user: {
+      id: string;
+      username: string;
+      firstname: string | null;
+      lastname: string | null;
+      avatar: string | null;
+    };
+    posts: PostResponse[];
+  };
+}
+
