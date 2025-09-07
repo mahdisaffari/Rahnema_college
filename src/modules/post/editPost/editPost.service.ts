@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { minioClient } from '../../../config/minio.config';
 import { PostResponse } from '../post.types';
 import { uploadBufferToMinIO } from '../post.service';
+import { extractHashtags } from '../../../utils/validators';
 
 const prisma = new PrismaClient();
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "rahnama";
@@ -12,7 +13,7 @@ export async function editPost(
   caption: string | undefined,
   images: Express.Multer.File[] | undefined,
   removeImageIds: string[] | undefined,
-  mentions: string[] | undefined // ورودی جدید برای منشن‌ها
+  mentions: string[] | undefined
 ): Promise<PostResponse> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -55,6 +56,21 @@ export async function editPost(
     });
   }
 
+  const hashtags = caption ? extractHashtags(caption) : [];
+  await prisma.postHashtag.deleteMany({ where: { postId } });
+  if (hashtags.length > 0) {
+    const hashtagRecords = await prisma.hashtag.findMany({
+      where: { name: { in: hashtags } },
+      select: { id: true, name: true },
+    });
+    await prisma.postHashtag.createMany({
+      data: hashtags.map((hashtag) => ({
+        postId,
+        hashtagId: hashtagRecords.find((h) => h.name === hashtag)!.id,
+      })),
+    });
+  }
+
   const updatedPost = await prisma.post.update({
     where: { id: postId },
     data: {
@@ -75,6 +91,9 @@ export async function editPost(
       mentions: {
         include: { user: { select: { id: true, username: true } } },
       },
+      hashtags: {
+        include: { hashtag: { select: { name: true } } },
+      },
     },
   });
 
@@ -88,5 +107,6 @@ export async function editPost(
     user: updatedPost.user,
     isOwner: true,
     mentions: updatedPost.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
+    hashtags: updatedPost.hashtags.map((h) => h.hashtag.name),
   };
 }

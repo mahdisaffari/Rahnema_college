@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { minioClient } from '../../config/minio.config';
 import { PostResponse, UserPostsResponse } from './post.types';
+import { extractHashtags } from '../../utils/validators';
 
 const prisma = new PrismaClient();
 
@@ -22,7 +23,7 @@ export async function uploadBufferToMinIO(
   }
 }
 
-//sakht post 
+// sakht post 
 export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
@@ -31,10 +32,11 @@ export async function createPostWithImages(
 ): Promise<PostResponse> {
   if (!images || images.length === 0) throw new Error('No images provided'); // baresi in ke image bashe
 
-   
   const uploadedUrls: string[] = await Promise.all(
     images.map((file) => uploadBufferToMinIO(file.buffer, file.originalname, 'posts'))
   );
+
+  const hashtags = caption ? extractHashtags(caption) : [];
 
   // afzayesh tedad post karbar
   const created = await prisma.post.create({
@@ -45,7 +47,12 @@ export async function createPostWithImages(
         create: uploadedUrls.map((url) => ({ url })),
       },
     },
-    include: { images: true, user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } } },
+    include: {
+      images: true,
+      user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
+      mentions: { include: { user: { select: { id: true, username: true } } } },
+      hashtags: { include: { hashtag: { select: { name: true } } } }, // include hashtags
+    },
   });
 
   await prisma.user.update({
@@ -60,6 +67,19 @@ export async function createPostWithImages(
     });
     await prisma.mention.createMany({
       data: users.map((user) => ({ postId: created.id, userId: user.id })),
+    });
+  }
+
+  if (hashtags.length > 0) {
+    const hashtagRecords = await prisma.hashtag.findMany({
+      where: { name: { in: hashtags } },
+      select: { id: true, name: true },
+    });
+    await prisma.postHashtag.createMany({
+      data: hashtags.map((hashtag) => ({
+        postId: created.id,
+        hashtagId: hashtagRecords.find((h) => h.name === hashtag)!.id,
+      })),
     });
   }
 
@@ -78,6 +98,7 @@ export async function createPostWithImages(
     user: created.user,
     isOwner: true,
     mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
+    hashtags: created.hashtags.map((h) => h.hashtag.name), // add hashtags to response
   };
 }
 
@@ -104,6 +125,9 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       mentions: {
         include: { user: { select: { id: true, username: true } } },
       },
+      hashtags: {
+        include: { hashtag: { select: { name: true } } }, // include hashtags
+      },
     },
   });
   if (!post) return null;
@@ -117,6 +141,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     user: post.user,
     isOwner: currentUserId ? post.user.id === currentUserId : false,
     mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
+    hashtags: post.hashtags.map((h) => h.hashtag.name), // add hashtags to response
   };
 }
 
@@ -149,6 +174,9 @@ export async function getUserPosts(
           mentions: {
             include: { user: { select: { id: true, username: true } } },
           },
+          hashtags: {
+            include: { hashtag: { select: { name: true } } }, // include hashtags
+          },
         },
       },
     },
@@ -180,6 +208,7 @@ export async function getUserPosts(
       },
       isOwner: currentUserId ? user.id === currentUserId : false,
       mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
+      hashtags: post.hashtags.map((h) => h.hashtag.name), // add hashtags to response
     })),
   };
 }

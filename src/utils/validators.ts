@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
 export const CreatePostSchema = z.object({
@@ -23,7 +24,53 @@ export const CreatePostSchema = z.object({
 export function extractMentions(caption: string): string[] {
   const mentionRegex = /@(\w+)/g;
   const matches = caption.match(mentionRegex) || [];
-  return matches.map((m) => m.slice(1)); 
+  return matches.map((m) => m.slice(1));
+}
+
+export function extractHashtags(caption: string): string[] {
+  const hashtagRegex = /#(\w+)/g;
+  const matches = caption.match(hashtagRegex) || [];
+  return matches.map((m) => m.slice(1).toLowerCase()); 
+}
+
+export async function validateMentions(usernames: string[]): Promise<string | null> {
+  if (usernames.length === 0) return null;
+  try {
+    const existingUsers = await prisma.user.findMany({
+      where: { username: { in: usernames } },
+      select: { username: true },
+    });
+    const existingUsernames = existingUsers.map((u) => u.username);
+    const invalidMentions = usernames.filter((u) => !existingUsernames.includes(u));
+    if (invalidMentions.length > 0) {
+      return `چنین یوزری نداریم: ${invalidMentions.join(", ")}`;
+    }
+    return null;
+  } catch {
+    return "خطا در چک منشن‌ها";
+  }
+}
+
+export async function validateHashtags(hashtags: string[]): Promise<string | null> {
+  if (hashtags.length === 0) return null;
+  try {
+    const existingHashtags = await prisma.hashtag.findMany({
+      where: { name: { in: hashtags } },
+      select: { name: true },
+    });
+    const existingHashtagNames = existingHashtags.map((h) => h.name);
+    const newHashtags = hashtags.filter((h) => !existingHashtagNames.includes(h));
+
+    if (newHashtags.length > 0) {
+      await prisma.hashtag.createMany({
+        data: newHashtags.map((name) => ({ name })),
+        skipDuplicates: true,
+      });
+    }
+    return null;
+  } catch {
+    return "خطا در اعتبارسنجی هشتگ‌ها";
+  }
 }
 
 export const GetUserPostsSchema = z.object({
@@ -65,24 +112,6 @@ export async function validateGetUserPosts(data: {
       );
     }
     return { username: "خطا در اعتبارسنجی" };
-  }
-}
-
-export async function validateMentions(usernames: string[]): Promise<string | null> {
-  if (usernames.length === 0) return null; 
-  try {
-    const existingUsers = await prisma.user.findMany({
-      where: { username: { in: usernames } },
-      select: { username: true },
-    });
-    const existingUsernames = existingUsers.map((u) => u.username);
-    const invalidMentions = usernames.filter((u) => !existingUsernames.includes(u));
-    if (invalidMentions.length > 0) {
-      return `چنین یوزری نداریم: ${invalidMentions.join(", ")}`;
-    }
-    return null;
-  } catch {
-    return "خطا در چک منشن‌ها";
   }
 }
 

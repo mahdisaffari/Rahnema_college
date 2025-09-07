@@ -1,19 +1,20 @@
 import { z } from 'zod';
-import { CreatePostSchema } from '../../../utils/validators';
+import { CreatePostSchema, extractHashtags, validateHashtags } from '../../../utils/validators';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export const EditPostSchema = CreatePostSchema.partial().extend({
-  mentions: z.array(z.string()).optional(), 
+  mentions: z.array(z.string()).optional(),
 });
 
 export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[]; removeImageIds?: string[]; mentions?: string[] })
-: Promise<{ images?: string | null; caption?: string | null; mentions?: string | null; removeImageIds?: string | null }> => {
+: Promise<{ images?: string | null; caption?: string | null; mentions?: string | null; removeImageIds?: string | null; hashtags?: string | null }> => {
   const errors = {
     images: validateImages({ images: data.images }),
     caption: validateCaption({ caption: data.caption }),
     mentions: await validateMentions(data.mentions || []),
+    hashtags: await validateHashtags(extractHashtags(data.caption || "")),
     removeImageIds: validateRemoveImageIds({ removeImageIds: data.removeImageIds }),
   };
   return errors;

@@ -1,12 +1,17 @@
 import { z } from "zod";
-import { CreatePostSchema, extractMentions, validateMentions } from "../../utils/validators";
+import { CreatePostSchema, extractHashtags, validateHashtags, validateMentions } from "../../utils/validators";
 
-export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[] })
-: Promise<{ images?: string | null; caption?: string | null; mentions?: string | null }> => {
+export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[] }): Promise<{
+  images?: string | null;
+  caption?: string | null;
+  mentions?: string | null;
+  hashtags?: string | null;
+}> => {
   const errors = {
     images: validateImages({ images: data.images }),
     caption: validateCaption({ caption: data.caption }),
-    mentions: await validateMentionsFromInput(data.caption || ""),
+    mentions: await validateMentions(extractHashtags(data.caption || "")),
+    hashtags: await validateHashtags(extractHashtags(data.caption || "")),
   };
   return errors;
 };
@@ -28,9 +33,3 @@ function validateCaption(data: { caption?: string }): string | null {
     return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی کپشن";
   }
 }
-
-async function validateMentionsFromInput(caption: string): Promise<string | null> {
-  const mentions = extractMentions(caption || "");
-  return await validateMentions(mentions);
-}
-
