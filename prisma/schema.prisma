@@ -20,69 +20,74 @@ model User {
   posts         Post[]
   likes         Like[]
   bookmarks     Bookmark[]
-  followers     Follow[] @relation("Follower")
-  following     Follow[] @relation("Following")
-  mentions      Mention[] 
-  postCount     Int      @default(0)
-  followerCount Int      @default(0)
-  followingCount Int     @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  followers     Follow[]   @relation("Follower")
+  following     Follow[]   @relation("Following")
+  mentions      Mention[]
+  comments      Comment[]  // اضافه شدن رابطه با کامنت‌ها
+  commentLikes  CommentLike[] // اضافه شدن رابطه با لایک‌های کامنت
+  postCount     Int        @default(0)
+  followerCount Int        @default(0)
+  followingCount Int       @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 model Post {
-  id            String   @id @default(uuid())
+  id            String       @id @default(uuid())
   caption       String?
   userId        String
-  user          User     @relation(fields: [userId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
   images        PostImage[]
   likes         Like[]
   bookmarks     Bookmark[]
-  mentions      Mention[] 
-  likeCount     Int      @default(0)
-  bookmarkCount Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  mentions      Mention[]
+  hashtags      PostHashtag[] // اضافه شدن رابطه با هشتگ‌ها
+  comments      Comment[]     // اضافه شدن رابطه با کامنت‌ها
+  likeCount     Int          @default(0)
+  bookmarkCount Int          @default(0)
+  commentCount  Int          @default(0) // اضافه شدن برای تعداد کامنت‌ها
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }
 
 model PostImage {
-  id            String   @id @default(uuid())
-  url           String
-  postId        String
-  post          Post     @relation(fields: [postId], references: [id])
+  id     String @id @default(uuid())
+  url    String
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
 }
 
 model Like {
-  id            String   @id @default(uuid()) 
-  userId        String 
-  user          User     @relation(fields: [userId], references: [id]) 
-  postId        String 
-  post          Post     @relation(fields: [postId], references: [id]) 
-  createdAt     DateTime @default(now()) 
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
 
-  @@unique([userId, postId]) 
-  @@index([postId]) 
+  @@unique([userId, postId])
+  @@index([postId])
 }
 
 model Bookmark {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  postId        String
-  post          Post     @relation(fields: [postId], references: [id])
-  createdAt     DateTime @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  createdAt DateTime @default(now())
 
   @@unique([userId, postId])
   @@index([postId])
 }
 
 model Follow {
-  id            String   @id @default(uuid())
-  followerId    String
-  followingId   String
-  follower      User     @relation("Follower", fields: [followerId], references: [id])
-  following     User     @relation("Following", fields: [followingId], references: [id])
-  createdAt     DateTime @default(now())
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
 
   @@unique([followerId, followingId])
   @@index([followerId])
@@ -90,14 +95,59 @@ model Follow {
 }
 
 model Mention {
-  id            String   @id @default(uuid())
-  postId        String
-  post          Post     @relation(fields: [postId], references: [id])
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  createdAt     DateTime @default(now())
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
 
-  @@unique([postId, userId]) 
+  @@unique([postId, userId])
   @@index([postId])
   @@index([userId])
+}
+
+model Comment {
+  id        String       @id @default(uuid())
+  content   String
+  postId    String
+  userId    String
+  parentId  String?      // برای ریپلای‌ها
+  post      Post         @relation(fields: [postId], references: [id])
+  user      User         @relation(fields: [userId], references: [id])
+  parent    Comment?     @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[]    @relation("CommentReplies")
+  likes     CommentLike[]
+  likeCount Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model CommentLike {
+  id        String   @id @default(uuid())
+  userId    String
+  commentId String
+  user      User     @relation(fields: [userId], references: [id])
+  comment   Comment  @relation(fields: [commentId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+}
+
+model Hashtag {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  posts     PostHashtag[]
+  createdAt DateTime     @default(now())
+}
+
+model PostHashtag {
+  postId    String
+  hashtagId String
+  post      Post      @relation(fields: [postId], references: [id])
+  hashtag   Hashtag   @relation(fields: [hashtagId], references: [id])
+  createdAt DateTime  @default(now())
+
+  @@unique([postId, hashtagId])
 }
