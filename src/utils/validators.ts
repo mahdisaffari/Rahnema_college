@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
@@ -27,6 +26,48 @@ export function extractMentions(caption: string): string[] {
   return matches.map((m) => m.slice(1)); 
 }
 
+export const GetUserPostsSchema = z.object({
+  username: z
+    .string()
+    .min(1, "نام کاربری الزامی است")
+    .refine((val) => val.trim().length > 0, "نام کاربری نمی‌تواند خالی باشد"),
+  page: z.number().int().positive("شماره صفحه باید عدد مثبت باشد").optional().default(1),
+  limit: z
+    .number()
+    .int()
+    .positive("تعداد باید عدد مثبت باشد")
+    .max(100, "حداکثر تعداد پست‌ها ۱۰۰ است")
+    .optional()
+    .default(10),
+});
+
+export async function validateGetUserPosts(data: {
+  username: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ username?: string | null; page?: string | null; limit?: string | null }> {
+  try {
+    GetUserPostsSchema.parse(data);
+
+    const user = await prisma.user.findUnique({
+      where: { username: data.username },
+    });
+    if (!user) {
+      return { username: `کاربر با نام کاربری ${data.username} یافت نشد` };
+    }
+
+    return { username: null, page: null, limit: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce(
+        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
+        {}
+      );
+    }
+    return { username: "خطا در اعتبارسنجی" };
+  }
+}
+
 export async function validateMentions(usernames: string[]): Promise<string | null> {
   if (usernames.length === 0) return null; 
   try {
@@ -37,28 +78,38 @@ export async function validateMentions(usernames: string[]): Promise<string | nu
     const existingUsernames = existingUsers.map((u) => u.username);
     const invalidMentions = usernames.filter((u) => !existingUsernames.includes(u));
     if (invalidMentions.length > 0) {
-      return `منشن‌های نامعتبر: ${invalidMentions.join(", ")}`;
+      return `چنین یوزری نداریم: ${invalidMentions.join(", ")}`;
     }
     return null;
   } catch {
     return "خطا در چک منشن‌ها";
   }
 }
+
 export const ProfileUpdateSchema = z.object({
   firstname: z
-    .string()
-    .max(50, "نام باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
-    .refine((val) => val.trim().length > 0, "نام باید رشته غیرخالی باشد")
+    .union([
+      z.string()
+        .max(50, "نام باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
+        .refine((val) => val.trim().length > 0, "نام باید رشته غیرخالی باشد"),
+      z.null(),
+    ])
     .optional(),
   lastname: z
-    .string()
-    .max(50, "نام خانوادگی باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
-    .refine((val) => val.trim().length > 0, "نام خانوادگی باید رشته غیرخالی باشد")
+    .union([
+      z.string()
+        .max(50, "نام خانوادگی باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
+        .refine((val) => val.trim().length > 0, "نام خانوادگی باید رشته غیرخالی باشد"),
+      z.null(),
+    ])
     .optional(),
   bio: z
-    .string()
-    .max(500, "بیوگرافی باید رشته غیرخالی باشد (حداکثر 500 کاراکتر)")
-    .refine((val) => val.trim().length > 0, "بیوگرافی باید رشته غیرخالی باشد")
+    .union([
+      z.string()
+        .max(500, "بیوگرافی باید رشته غیرخالی باشد (حداکثر 500 کاراکتر)")
+        .refine((val) => val.trim().length > 0, "بیوگرافی باید رشته غیرخالی باشد"),
+      z.null(),
+    ])
     .optional(),
   email: z
     .string()
@@ -73,12 +124,15 @@ export const ProfileUpdateSchema = z.object({
     )
     .optional(),
   avatar: z
-    .object({
-      mimetype: z.string().refine((val) => val.startsWith("image/"), {
-        message: "فقط فایل‌های تصویری مجاز هستند",
+    .union([
+      z.object({
+        mimetype: z.string().refine((val) => val.startsWith("image/"), {
+          message: "فقط فایل‌های تصویری مجاز هستند",
+        }),
+        size: z.number().max(5 * 1024 * 1024, "سایز فایل باید کمتر از ۵ مگابایت باشد"),
       }),
-      size: z.number().max(5 * 1024 * 1024, "سایز فایل باید کمتر از ۵ مگابایت باشد"),
-    })
+      z.null(),
+    ])
     .optional(),
 });
 

@@ -22,6 +22,7 @@ model User {
   bookmarks     Bookmark[]
   followers     Follow[] @relation("Follower")
   following     Follow[] @relation("Following")
+  mentions      Mention[] 
   postCount     Int      @default(0)
   followerCount Int      @default(0)
   followingCount Int     @default(0)
@@ -37,6 +38,7 @@ model Post {
   images        PostImage[]
   likes         Like[]
   bookmarks     Bookmark[]
+  mentions      Mention[] 
   likeCount     Int      @default(0)
   bookmarkCount Int      @default(0)
   createdAt     DateTime @default(now())
@@ -51,15 +53,15 @@ model PostImage {
 }
 
 model Like {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id])
-  postId        String
-  post          Post     @relation(fields: [postId], references: [id])
-  createdAt     DateTime @default(now())
+  id            String   @id @default(uuid()) 
+  userId        String 
+  user          User     @relation(fields: [userId], references: [id]) 
+  postId        String 
+  post          Post     @relation(fields: [postId], references: [id]) 
+  createdAt     DateTime @default(now()) 
 
-  @@unique([userId, postId])
-  @@index([postId])
+  @@unique([userId, postId]) 
+  @@index([postId]) 
 }
 
 model Bookmark {
@@ -85,4 +87,17 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+}
+
+model Mention {
+  id            String   @id @default(uuid())
+  postId        String
+  post          Post     @relation(fields: [postId], references: [id])
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@unique([postId, userId]) 
+  @@index([postId])
+  @@index([userId])
 }
