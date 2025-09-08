@@ -22,3 +22,12 @@ export interface CreateCommentApiResponse {
   message: string;
   data?: CommentResponse;
 }
+
+export interface LikeCommentResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    likeCount: number;
+    liked: boolean;
+  };
+}

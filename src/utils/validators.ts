@@ -110,6 +110,45 @@ export async function validateCreateComment(data: { content: string; postId: str
   }
 }
 
+export const CreateReplySchema = z.object({
+  content: z
+    .string()
+    .min(1, "محتوای ریپلای الزامی است")
+    .max(500, "محتوای ریپلای باید کمتر از ۵۰۰ کاراکتر باشد"),
+});
+
+export async function validateCreateReply(data: { content: string; commentId: string }): Promise<{ content?: string | null; commentId?: string | null }> {
+  try {
+    CreateReplySchema.parse({ content: data.content });
+    z.string().uuid("شناسه کامنت نامعتبر است").parse(data.commentId);
+    const comment = await prisma.comment.findUnique({ where: { id: data.commentId } });
+    if (!comment) return { commentId: "کامنت یافت نشد" };
+    return { content: null, commentId: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce(
+        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
+        {}
+      );
+    }
+    return { commentId: "خطا در اعتبارسنجی ریپلای" };
+  }
+}
+
+export async function validateCommentId(data: { commentId: string }): Promise<{ commentId?: string | null }> {
+  try {
+    z.string().uuid("شناسه کامنت نامعتبر است").parse(data.commentId);
+    const comment = await prisma.comment.findUnique({ where: { id: data.commentId } });
+    if (!comment) return { commentId: "کامنت یافت نشد" };
+    return { commentId: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { commentId: error.issues[0].message };
+    }
+    return { commentId: "خطا در اعتبارسنجی شناسه کامنت" };
+  }
+}
+
 export const GetUserPostsSchema = z.object({
   username: z
     .string()
