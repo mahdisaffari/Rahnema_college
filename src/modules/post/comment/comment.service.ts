@@ -48,6 +48,7 @@ export async function createComment(
     user: comment.user,
     postId: comment.postId,
     likeCount: comment.likeCount,
+    replies: [], 
   };
 }
 
@@ -104,6 +105,7 @@ export async function createReply(
     user: reply.user,
     postId: reply.postId,
     likeCount: reply.likeCount,
+    replies: [], 
   };
 }
 
@@ -151,4 +153,102 @@ export async function likeComment(
     });
     return { likeCount: updatedComment.likeCount, liked: true };
   }
+}
+
+// gereftan comment haye post ba safhe bandi
+export async function getPostComments(
+  postId: string,
+  page: number = 1,
+  limit: number = 10
+): Promise<{ comments: CommentResponse[]; total: number; page: number; limit: number }> {
+  // baresi vojood post
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
+  });
+  if (!post) throw new Error('پست یافت نشد');
+
+  // shomaresh comment ha
+  const total = await prisma.comment.count({
+    where: { postId, parentId: null }, // faghat comment haye asli (na reply)
+  });
+
+  // gereftan comment haye asli ba reply haye too dar too
+  const comments = await prisma.comment.findMany({
+    where: { postId, parentId: null }, // faghat comment haye asli
+    skip: (page - 1) * limit,
+    take: limit,
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          id: true,
+          username: true,
+          firstname: true,
+          lastname: true,
+          avatar: true,
+        },
+      },
+      replies: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              username: true,
+              firstname: true,
+              lastname: true,
+              avatar: true,
+            },
+          },
+          replies: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  firstname: true,
+                  lastname: true,
+                  avatar: true,
+                },
+              },
+              replies: true, // reply haye too dar too (mitone ta har omghi ke lazem bashe edame dashte bashe)
+            },
+          },
+        },
+      },
+    },
+  });
+
+  // tabdil be format CommentResponse
+  const formattedComments: CommentResponse[] = comments.map((comment) => ({
+    id: comment.id,
+    content: comment.content,
+    createdAt: comment.createdAt.toISOString(),
+    user: comment.user,
+    postId: comment.postId,
+    likeCount: comment.likeCount,
+    replies: comment.replies.map((reply) => ({
+      id: reply.id,
+      content: reply.content,
+      createdAt: reply.createdAt.toISOString(),
+      user: reply.user,
+      postId: reply.postId,
+      likeCount: reply.likeCount,
+      replies: reply.replies.map((nestedReply) => ({
+        id: nestedReply.id,
+        content: nestedReply.content,
+        createdAt: nestedReply.createdAt.toISOString(),
+        user: nestedReply.user,
+        postId: nestedReply.postId,
+        likeCount: nestedReply.likeCount,
+        replies: [], // mitone inja ham recursive bashe agar omgh bishtar mikhay
+      })),
+    })),
+  }));
+
+  return {
+    comments: formattedComments,
+    total,
+    page,
+    limit,
+  };
 }

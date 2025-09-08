@@ -15,6 +15,7 @@ export interface CommentResponse {
   };
   postId: string;
   likeCount: number; 
+  replies: CommentResponse[];
 }
 
 export interface CreateCommentApiResponse {
@@ -29,5 +30,16 @@ export interface LikeCommentResponse {
   data?: {
     likeCount: number;
     liked: boolean;
+  };
+}
+
+export interface GetPostCommentsResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    comments: CommentResponse[];
+    total: number;
+    page: number;
+    limit: number;
   };
 }

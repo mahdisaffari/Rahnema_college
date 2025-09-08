@@ -79,37 +79,22 @@ export const CreateCommentSchema = z.object({
   content: z
     .string()
     .min(1, "محتوای کامنت الزامی است")
-    .max(500, "محتوای کامنت باید حداکثر ۵۰۰ کاراکتر باشد")
-    .refine((val) => val.trim().length > 0, "محتوای کامنت نمی‌تواند خالی باشد"),
+    .max(500, "محتوای کامنت باید کمتر از ۵۰۰ کاراکتر باشد"),
 });
 
-// validate baraye ijad comment
-export async function validateCreateComment(data: { content: string; postId: string }): Promise<{
-  content?: string | null;
-  postId?: string | null;
-}> {
+export async function validateCreateComment(data: { content: string }): Promise<{ content?: string | null }> {
   try {
     CreateCommentSchema.parse(data);
-
-    const post = await prisma.post.findUnique({
-      where: { id: data.postId },
-    });
-    if (!post) {
-      return { postId: `پست با شناسه ${data.postId} یافت نشد` };
-    }
-
-    return { content: null, postId: null };
+    return { content: null };
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return error.issues.reduce(
-        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
-        {}
-      );
+      return { content: error.issues[0].message };
     }
-    return { content: "خطا در اعتبارسنجی" };
+    return { content: "خطا در اعتبارسنجی کامنت" };
   }
 }
 
+// schema baraye reply
 export const CreateReplySchema = z.object({
   content: z
     .string()
@@ -149,29 +134,43 @@ export async function validateCommentId(data: { commentId: string }): Promise<{ 
   }
 }
 
-export const GetUserPostsSchema = z.object({
-  username: z
-    .string()
-    .min(1, "نام کاربری الزامی است")
-    .refine((val) => val.trim().length > 0, "نام کاربری نمی‌تواند خالی باشد"),
-  page: z.number().int().positive("شماره صفحه باید عدد مثبت باشد").optional().default(1),
-  limit: z
-    .number()
-    .int()
-    .positive("تعداد باید عدد مثبت باشد")
-    .max(100, "حداکثر تعداد پست‌ها ۱۰۰ است")
-    .optional()
-    .default(10),
-});
+// validator baraye GET /posts/:id/comments
+export async function validateGetPostComments(data: { postId: string; page: number; limit: number }): Promise<{ postId?: string | null; page?: string | null; limit?: string | null }> {
+  const schema = z.object({
+    postId: z.string().uuid("شناسه پست نامعتبر است"),
+    page: z.number().int().min(1, "صفحه باید حداقل ۱ باشد"),
+    limit: z.number().int().min(1, "حد باید حداقل ۱ باشد").max(50, "حد حداکثر ۵۰ است"),
+  });
+
+  try {
+    schema.parse(data);
+    const post = await prisma.post.findUnique({ where: { id: data.postId } });
+    if (!post) return { postId: "پست یافت نشد" };
+    return { postId: null, page: null, limit: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce(
+        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
+        {}
+      );
+    }
+    return { postId: "خطا در اعتبارسنجی" };
+  }
+}
 
 export async function validateGetUserPosts(data: {
   username: string;
-  page?: number;
-  limit?: number;
+  page: number;
+  limit: number;
 }): Promise<{ username?: string | null; page?: string | null; limit?: string | null }> {
-  try {
-    GetUserPostsSchema.parse(data);
+  const schema = z.object({
+    username: z.string().min(1, "نام کاربری الزامی است"),
+    page: z.number().int().min(1, "صفحه باید حداقل ۱ باشد"),
+    limit: z.number().int().min(1, "حد باید حداقل ۱ باشد").max(100, "حد حداکثر ۱۰۰ است"),
+  });
 
+  try {
+    schema.parse(data);
     const user = await prisma.user.findUnique({
       where: { username: data.username },
     });

@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../../auth/auth.middleware';
-import { CreateCommentApiResponse, LikeCommentResponse } from './comment.types';
-import { createComment, createReply, likeComment } from './comment.service';
+import { CreateCommentApiResponse, LikeCommentResponse, GetPostCommentsResponse } from './comment.types';
+import { createComment, createReply, likeComment, getPostComments } from './comment.service';
 import { handleError } from '../../../utils/errorHandler';
 
 // handler baraye ijad comment
@@ -55,5 +55,23 @@ export async function likeCommentHandler(req: AuthRequest, res: Response<LikeCom
     });
   } catch (error) {
     return handleError(error, res, 'خطا در لایک/آنلایک کامنت', 400);
+  }
+}
+
+// handler baraye gereftan comment haye post
+export async function getPostCommentsHandler(req: AuthRequest, res: Response<GetPostCommentsResponse>) {
+  try {
+    const postId = req.params.id;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const result = await getPostComments(postId, page, limit);
+    return res.status(200).json({
+      success: true,
+      message: 'کامنت‌ها با موفقیت دریافت شد',
+      data: result,
+    });
+  } catch (error) {
+    return handleError(error, res, 'خطا در دریافت کامنت‌ها', 404);
   }
 }
