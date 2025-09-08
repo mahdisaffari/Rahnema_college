@@ -24,6 +24,7 @@ export interface PostResponse {
   createdAt: string;
   likeCount: number;
   bookmarkCount: number;
+  commentCount: number; 
   user: {
     id: string;
     username: string;

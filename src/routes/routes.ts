@@ -13,6 +13,8 @@ import { getPostProfileHandler } from "../modules/user/postProfile/postProfile.c
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
 import { getFollowersHandler, getFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
+import { createCommentHandler } from "../modules/post/comment/comment.controller";
+import { validateCreateComment } from "../utils/validators";
 
 const router = Router();
 
@@ -34,9 +36,11 @@ router.post("/posts", auth, upload.array("images", 5), validateAllMiddleware, cr
 router.get("/posts/:id", auth, getPostHandler);
 // ادیت پست
 router.put("/posts/:id", auth, upload.array("images", 5), validateEditPostMiddleware, editPostHandler); 
+
 router.get("/users/:username/posts", auth, validateGetUserPostsMiddleware, getUserPostsHandler); 
 router.post("/posts/:id/bookmark", auth, bookmarkPostHandler);
 router.post("/posts/:id/like", auth, likePostHandler);
+router.post("/posts/:id/comments", auth, validateCreateComment, createCommentHandler);
 //router.delete("/posts/:id/bookmark", auth, bookmarkPostHandler);
 //router.delete("/posts/:id/like", auth, likePostHandler);
 //router.get("/posts/:id/likes", auth, getPostLikesCountHandler);

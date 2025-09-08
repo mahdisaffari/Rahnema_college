@@ -51,7 +51,7 @@ export async function createPostWithImages(
       images: true,
       user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
       mentions: { include: { user: { select: { id: true, username: true } } } },
-      hashtags: { include: { hashtag: { select: { name: true } } } }, // include hashtags
+      hashtags: { include: { hashtag: { select: { name: true } } } },
     },
   });
 
@@ -95,10 +95,11 @@ export async function createPostWithImages(
     createdAt: created.createdAt.toISOString(),
     likeCount: created.likeCount || 0,
     bookmarkCount: created.bookmarkCount || 0,
+    commentCount: created.commentCount || 0, // afzodan commentCount be response
     user: created.user,
     isOwner: true,
     mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
-    hashtags: created.hashtags.map((h) => h.hashtag.name), // add hashtags to response
+    hashtags: created.hashtags.map((h) => h.hashtag.name),
   };
 }
 
@@ -113,6 +114,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       createdAt: true,
       likeCount: true,
       bookmarkCount: true,
+      commentCount: true, // afzodan commentCount be select
       user: {
         select: {
           id: true,
@@ -126,7 +128,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
         include: { user: { select: { id: true, username: true } } },
       },
       hashtags: {
-        include: { hashtag: { select: { name: true } } }, // include hashtags
+        include: { hashtag: { select: { name: true } } },
       },
     },
   });
@@ -138,10 +140,11 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     createdAt: post.createdAt.toISOString(),
     likeCount: post.likeCount,
     bookmarkCount: post.bookmarkCount,
+    commentCount: post.commentCount, // afzodan commentCount be response
     user: post.user,
     isOwner: currentUserId ? post.user.id === currentUserId : false,
     mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
-    hashtags: post.hashtags.map((h) => h.hashtag.name), // add hashtags to response
+    hashtags: post.hashtags.map((h) => h.hashtag.name),
   };
 }
 
@@ -171,11 +174,12 @@ export async function getUserPosts(
           createdAt: true,
           likeCount: true,
           bookmarkCount: true,
+          commentCount: true, // afzodan commentCount be select
           mentions: {
             include: { user: { select: { id: true, username: true } } },
           },
           hashtags: {
-            include: { hashtag: { select: { name: true } } }, // include hashtags
+            include: { hashtag: { select: { name: true } } },
           },
         },
       },
@@ -199,6 +203,7 @@ export async function getUserPosts(
       createdAt: post.createdAt.toISOString(),
       likeCount: post.likeCount,
       bookmarkCount: post.bookmarkCount,
+      commentCount: post.commentCount, // afzodan commentCount be response
       user: {
         id: user.id,
         username: user.username,
@@ -208,7 +213,7 @@ export async function getUserPosts(
       },
       isOwner: currentUserId ? user.id === currentUserId : false,
       mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
-      hashtags: post.hashtags.map((h) => h.hashtag.name), // add hashtags to response
+      hashtags: post.hashtags.map((h) => h.hashtag.name),
     })),
   };
 }

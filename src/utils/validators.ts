@@ -30,7 +30,7 @@ export function extractMentions(caption: string): string[] {
 export function extractHashtags(caption: string): string[] {
   const hashtagRegex = /#(\w+)/g;
   const matches = caption.match(hashtagRegex) || [];
-  return matches.map((m) => m.slice(1).toLowerCase()); 
+  return matches.map((m) => m.slice(1).toLowerCase()); // tabdil be horoof koochik baraye yekparchegi
 }
 
 export async function validateMentions(usernames: string[]): Promise<string | null> {
@@ -61,6 +61,7 @@ export async function validateHashtags(hashtags: string[]): Promise<string | nul
     const existingHashtagNames = existingHashtags.map((h) => h.name);
     const newHashtags = hashtags.filter((h) => !existingHashtagNames.includes(h));
 
+    // ijad hashtag haye jadid
     if (newHashtags.length > 0) {
       await prisma.hashtag.createMany({
         data: newHashtags.map((name) => ({ name })),
@@ -70,6 +71,42 @@ export async function validateHashtags(hashtags: string[]): Promise<string | nul
     return null;
   } catch {
     return "خطا در اعتبارسنجی هشتگ‌ها";
+  }
+}
+
+// schema baraye comment
+export const CreateCommentSchema = z.object({
+  content: z
+    .string()
+    .min(1, "محتوای کامنت الزامی است")
+    .max(500, "محتوای کامنت باید حداکثر ۵۰۰ کاراکتر باشد")
+    .refine((val) => val.trim().length > 0, "محتوای کامنت نمی‌تواند خالی باشد"),
+});
+
+// validate baraye ijad comment
+export async function validateCreateComment(data: { content: string; postId: string }): Promise<{
+  content?: string | null;
+  postId?: string | null;
+}> {
+  try {
+    CreateCommentSchema.parse(data);
+
+    const post = await prisma.post.findUnique({
+      where: { id: data.postId },
+    });
+    if (!post) {
+      return { postId: `پست با شناسه ${data.postId} یافت نشد` };
+    }
+
+    return { content: null, postId: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce(
+        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
+        {}
+      );
+    }
+    return { content: "خطا در اعتبارسنجی" };
   }
 }
 
