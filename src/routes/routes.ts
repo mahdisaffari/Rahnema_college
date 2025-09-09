@@ -13,8 +13,10 @@ import { getPostProfileHandler } from "../modules/user/postProfile/postProfile.c
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
 import { getFollowersHandler, getFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
-import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCommentsHandler } from "../modules/post/comment/comment.controller"; // اضافه کردن کنترلر جدید
-import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments } from "../utils/validators"; // اضافه کردن والیدیشن جدید
+import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCommentsHandler } from "../modules/post/comment/comment.controller";
+import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments } from "../utils/validators";
+import { getHomepageHandler } from "../modules/user/homepage/homepage.controller";
+import { validateHomepageMiddleware } from "../modules/user/homepage/homepage.middleware";
 
 const router = Router();
 
@@ -34,16 +36,14 @@ router.get("/users/:username", validateUsernameMiddleware, getUserHandler);
 // مسیرهای پست
 router.post("/posts", auth, upload.array("images", 5), validateAllMiddleware, createSetupPostHandler);
 router.get("/posts/:id", auth, getPostHandler);
-// ادیت پست
-router.put("/posts/:id", auth, upload.array("images", 5), validateEditPostMiddleware, editPostHandler); 
-
+router.put("/posts/:id", auth, upload.array("images", 5), validateEditPostMiddleware, editPostHandler);
 router.get("/users/:username/posts", auth, validateGetUserPostsMiddleware, getUserPostsHandler); 
 router.post("/posts/:id/bookmark", auth, bookmarkPostHandler);
 router.post("/posts/:id/like", auth, likePostHandler);
 router.post("/posts/:id/comments", auth, validateCreateComment, createCommentHandler);
 router.post("/posts/:id/comments/:commentId/reply", auth, validateCreateReply, createReplyHandler);
 router.post("/posts/:id/comments/:commentId/like", auth, validateCommentId, likeCommentHandler);
-router.get("/posts/:id/comments", auth, validateGetPostComments, getPostCommentsHandler); 
+router.get("/posts/:id/comments", auth, validateGetPostComments, getPostCommentsHandler);
 //router.delete("/posts/:id/bookmark", auth, bookmarkPostHandler);
 //router.delete("/posts/:id/like", auth, likePostHandler);
 //router.get("/posts/:id/likes", auth, getPostLikesCountHandler);
@@ -55,5 +55,8 @@ router.delete("/users/:username/follow", auth, validateUsernameMiddleware, follo
 // مسیرهای فالوورها و فالویینگ‌ها
 router.get("/users/followers", auth, getFollowersHandler);
 router.get("/users/followings", auth, getFollowingsHandler);
+
+// مسیر هوم‌پیج
+router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
 
 export default router;

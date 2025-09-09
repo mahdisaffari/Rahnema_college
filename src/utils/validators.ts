@@ -30,7 +30,7 @@ export function extractMentions(caption: string): string[] {
 export function extractHashtags(caption: string): string[] {
   const hashtagRegex = /#(\w+)/g;
   const matches = caption.match(hashtagRegex) || [];
-  return matches.map((m) => m.slice(1).toLowerCase()); // tabdil be horoof koochik baraye yekparchegi
+  return matches.map((m) => m.slice(1).toLowerCase());
 }
 
 export async function validateMentions(usernames: string[]): Promise<string | null> {
@@ -60,8 +60,6 @@ export async function validateHashtags(hashtags: string[]): Promise<string | nul
     });
     const existingHashtagNames = existingHashtags.map((h) => h.name);
     const newHashtags = hashtags.filter((h) => !existingHashtagNames.includes(h));
-
-    // ijad hashtag haye jadid
     if (newHashtags.length > 0) {
       await prisma.hashtag.createMany({
         data: newHashtags.map((name) => ({ name })),
@@ -73,6 +71,25 @@ export async function validateHashtags(hashtags: string[]): Promise<string | nul
     return "خطا در اعتبارسنجی هشتگ‌ها";
   }
 }
+
+export const validateGetHomepage = (data: { page: number; limit: number }): { page?: string; limit?: string } => {
+  try {
+    const schema = z.object({
+      page: z.number().int().min(1, "صفحه باید عدد مثبت باشد"),
+      limit: z.number().int().min(1).max(50, "حداکثر ۵۰ پست در هر صفحه"),
+    });
+    schema.parse(data);
+    return {};
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce(
+        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
+        {}
+      );
+    }
+    return { page: "خطا در اعتبارسنجی" };
+  }
+};
 
 // schema baraye comment
 export const CreateCommentSchema = z.object({
