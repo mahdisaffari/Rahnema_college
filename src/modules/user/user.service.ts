@@ -97,11 +97,10 @@ export async function updateProfile(
   //agar email sakht
   if (data.email) {
     const normalizedEmail = normEmail(data.email);
-    if (// tekrai nabashe
-      (await prisma.user.findUnique({ where: { email: normalizedEmail } }))?.id !==
-      userId
-    )
-      throw new Error('ایمیل تکراری است');
+    console.log("Checking email:", normalizedEmail, "for userId:", userId); // لاگ برای دیباگ
+    const existingUser = await prisma.user.findFirst({ where: { email: normalizedEmail, NOT: { id: userId } } });
+    console.log("Found user:", existingUser); // لاگ برای چک کردن نتیجه
+    if (existingUser) throw new Error('ایمیل تکراری است');
     updateData.email = normalizedEmail;  // ok bod update kon
   }
   // agar pass jadid dad

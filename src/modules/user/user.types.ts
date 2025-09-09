@@ -27,7 +27,7 @@ export interface UserUpdateRequest {
   firstname?: string;
   lastname?: string;
   bio?: string;
-  avatar?: Express.Multer.File;
+  avatar?: Express.Multer.File | null;
   email?: string;
   password?: string;
 }

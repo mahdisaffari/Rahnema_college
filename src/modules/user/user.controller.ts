@@ -33,7 +33,13 @@ export async function updateProfileHandler(req: AuthRequest, res: Response<UserA
   try {
     const userId = req.user!.id;
     const { firstname, lastname, bio, email, password }: UserUpdateRequest = req.body;
-    const avatar = req.file;
+
+    let avatar: Express.Multer.File | null | undefined = req.file;
+    if (req.body.avatar === 'null' || req.body.avatar === null) {
+      avatar = null; 
+    } else if (req.body.avatar && !req.file) {
+      avatar = undefined; 
+    }
 
     const updatedUser = await updateProfile(userId, {
       firstname,
@@ -48,4 +54,5 @@ export async function updateProfileHandler(req: AuthRequest, res: Response<UserA
   } catch (error) {
     return handleError(error, res, 'خطا در بروزرسانی پروفایل');
   }
+  
 }

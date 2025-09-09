@@ -84,7 +84,7 @@ Content-Type: application/json
 
 {
   "identifier": "testuser6",
-  "password": "Secret123!" 
+  "password": "NewPass123!A!"
 }
 
 ###
