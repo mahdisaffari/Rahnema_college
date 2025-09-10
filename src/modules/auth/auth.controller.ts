@@ -20,9 +20,9 @@ export async function login(req: Request<{}, {}, LoginRequest>, res: Response<Lo
   try {
     const error = validateLogin(req.body);
     if (error) return res.status(400).json({ success: false, message: error });
-    const token = await authService.login(req.body.identifier, req.body.password);
+    const { token, username } = await authService.login(req.body.identifier, req.body.password);
     setAuthCookies(res, token);
-    return res.json({ success: true, message: 'ورود با موفقیت انجام شد', token });
+    return res.json({ success: true, message: 'ورود با موفقیت انجام شد', token, username }); 
   } catch (error) {
     return handleError(error, res, 'اعتبارنامه‌های نامعتبر', 401);
   }

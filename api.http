@@ -73,8 +73,8 @@ POST http://localhost:3000/register
 Content-Type: application/json
 
 {
-  "username": "testuser6",
-  "email": "testuser6@example.com",
+  "username": "testuser66",
+  "email": "testuser66@example.com",
   "password": "Secret123!"
 }
 
@@ -83,7 +83,7 @@ POST http://localhost:3000/login
 Content-Type: application/json
 
 {
-  "identifier": "testuser6",
+  "identifier": "testuser66",
   "password": "Secret123!" 
 }
 
