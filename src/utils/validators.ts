@@ -76,7 +76,7 @@ export const validateGetHomepage = (data: { page: number; limit: number }): { pa
   try {
     const schema = z.object({
       page: z.number().int().min(1, "صفحه باید عدد مثبت باشد"),
-      limit: z.number().int().min(1).max(50, "حداکثر ۵۰ پست در هر صفحه"),
+      limit: z.number().int().min(1, "حد باید حداقل ۱ باشد").max(10, "حد حداکثر ۱۰ است"), 
     });
     schema.parse(data);
     return {};

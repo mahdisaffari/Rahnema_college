@@ -1,13 +1,13 @@
 import { PrismaClient } from '@prisma/client';
-import { HomepageResponse, HomepagePostResponse } from './homepage.types';
+import { HomepagePostResponse } from './homepage.types'; // HomepageResponse رو حذف کردم چون در controller استفاده می‌شه
 
 const prisma = new PrismaClient();
 
 export async function getHomepagePosts(
   userId: string,
-  page: number = 1
+  page: number = 1,
+  limit: number = 6 
 ): Promise<{ posts: HomepagePostResponse[]; total: number }> {
-  const limit = 6;
   const following = await prisma.follow.findMany({
     where: { followerId: userId },
     select: { followingId: true },
@@ -23,7 +23,7 @@ export async function getHomepagePosts(
       where: { userId: { in: followingIds } },
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: 'desc' }, 
       include: {
         images: { select: { id: true, url: true } },
         user: {

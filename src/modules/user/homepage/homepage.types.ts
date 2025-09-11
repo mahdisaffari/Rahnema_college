@@ -3,7 +3,12 @@ export interface HomepageResponse {
   message: string;
   data: {
     posts: HomepagePostResponse[];
-    total: number;
+    pagination: {
+      page: number;
+      limit: number;
+      total_records: number;
+      total_pages: number;
+    };
   };
 }
 

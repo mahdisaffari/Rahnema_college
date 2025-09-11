@@ -8,13 +8,24 @@ export async function getHomepageHandler(req: AuthRequest, res: Response<Homepag
   try {
     const userId = req.user!.id;
     const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 6; 
 
-    const { posts, total } = await getHomepagePosts(userId, page);
+    const { posts, total } = await getHomepagePosts(userId, page, limit);
+
+    const total_pages = Math.ceil(total / limit);
 
     return res.json({
       success: true,
       message: posts.length ? 'پست‌های هوم‌پیج دریافت شدند' : 'هیچ پستی یافت نشد',
-      data: { posts, total },
+      data: {
+        posts,
+        pagination: {
+          page,
+          limit,
+          total_records: total,
+          total_pages,
+        },
+      },
     });
   } catch (error) {
     return handleError(error, res, 'خطا در دریافت پست‌های هوم‌پیج');
