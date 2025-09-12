@@ -20,6 +20,7 @@ export async function createSetupPostHandler(req: AuthRequest, res: Response<Cre
         caption: post.caption,
         images: post.images,
         createdAt: post.createdAt,
+        mentions: post.mentions, 
       },
     });
   } catch (error) {

@@ -28,9 +28,9 @@ export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
   images: Express.Multer.File[],
-  mentions: string[] | undefined 
+  mentions: string[] | undefined
 ): Promise<PostResponse> {
-  if (!images || images.length === 0) throw new Error('No images provided'); // baresi in ke image bashe
+  if (!images || images.length === 0) throw new Error('No images provided');
 
   const uploadedUrls: string[] = await Promise.all(
     images.map((file) => uploadBufferToMinIO(file.buffer, file.originalname, 'posts'))
@@ -38,7 +38,6 @@ export async function createPostWithImages(
 
   const hashtags = caption ? extractHashtags(caption) : [];
 
-  // afzayesh tedad post karbar
   const created = await prisma.post.create({
     data: {
       caption: caption ?? null,
@@ -95,14 +94,13 @@ export async function createPostWithImages(
     createdAt: created.createdAt.toISOString(),
     likeCount: created.likeCount || 0,
     bookmarkCount: created.bookmarkCount || 0,
-    commentCount: created.commentCount || 0, // afzodan commentCount be response
+    commentCount: created.commentCount || 0,
     user: created.user,
     isOwner: true,
     mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
     hashtags: created.hashtags.map((h) => h.hashtag.name),
   };
 }
-
 // baraye user jari ya login shode
 export async function getPostById(postId: string, currentUserId?: string): Promise<PostResponse | null> {
   const post = await prisma.post.findUnique({

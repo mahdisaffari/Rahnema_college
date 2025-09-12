@@ -4,21 +4,31 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export const CreatePostSchema = z.object({
-  caption: z
-    .string()
-    .max(300, "کپشن باید رشته معتبر با حداکثر ۳۰۰ کاراکتر باشد")
-    .optional(),
-  images: z
-    .array(
-      z.object({
-        mimetype: z.string().refine((val) => val.startsWith("image/"), {
-          message: "همه فایل‌ها باید تصویری باشند",
+caption: z
+  .string()
+  .max(300, "کپشن باید حداکثر ۳۰۰ کاراکتر باشد")
+  .optional(),
+
+images: z
+  .array(
+    z.object({
+      mimetype: z
+        .string()
+        .refine((val) => val.startsWith("image/"), {
+          message: "فقط تصویر مجاز است",
         }),
-        size: z.number().max(5 * 1024 * 1024, "حجم هر تصویر باید کمتر از ۵ مگابایت باشد"),
-      })
-    )
-    .max(5, "حداکثر ۵ تصویر مجاز است")
-    .min(1, "ارسال حداقل یک تصویر الزامی است"),
+      size: z
+        .number()
+        .max(5 * 1024 * 1024, "حجم تصویر باید کمتر از ۵ مگابایت باشد"),
+    })
+  )
+  .max(5, "حداکثر ۵ تصویر")
+  .min(1, "حداقل یک تصویر الزامی است"),
+
+mentions: z
+  .array(z.string().min(1, "نام کاربری الزامی است"))
+  .optional()
+  .default([]), 
 });
 
 export function extractMentions(caption: string): string[] {
