@@ -9,6 +9,7 @@ export interface ProfileResponse {
   postCount: number;
   followerCount: number;
   followingCount: number;
+  isFollowedByMe?: boolean; // optional for profile of current user
 }
 
 export interface UserResponse {
@@ -21,6 +22,7 @@ export interface UserResponse {
   postCount: number;
   followerCount: number;
   followingCount: number;
+  isFollowedByMe: boolean; // required for other users
 }
 
 export interface UserUpdateRequest {

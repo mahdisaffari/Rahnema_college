@@ -7,10 +7,10 @@ import { cloudinary } from '../../config/cloudinary.config';
 const prisma = new PrismaClient();
 
 // ye user migire profile ro mide bedone pass
-export async function getProfile(userId: string): Promise<ProfileResponse | null> {
-  return prisma.user.findUnique({ // faghad ye karbar ba in id bar migarde
+export async function getProfile(userId: string, currentUserId: string): Promise<ProfileResponse | null> {
+  const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: {// fild haro moshakhas mikonim
+    select: {
       id: true,
       username: true,
       email: true,
@@ -23,9 +23,18 @@ export async function getProfile(userId: string): Promise<ProfileResponse | null
       followingCount: true,
     },
   });
+
+  if (!user) return null;
+
+  // Check if the current user follows this user
+  const isFollowed = await prisma.follow.findUnique({
+    where: { followerId_followingId: { followerId: currentUserId, followingId: userId } },
+  });
+
+  return { ...user, isFollowedByMe: !!isFollowed };
 }
 
-export async function getUserByUsername(username: string): Promise<UserResponse | null> {
+export async function getUserByUsername(username: string, currentUserId: string): Promise<UserResponse | null> {
   const user = await prisma.user.findUnique({
     where: { username },
     select: {
@@ -40,10 +49,16 @@ export async function getUserByUsername(username: string): Promise<UserResponse 
       followingCount: true,
     },
   });
-  if (!user) return null;
-  return user;
-}
 
+  if (!user) return null;
+
+  // Check if the current user follows this user
+  const isFollowed = await prisma.follow.findUnique({
+    where: { followerId_followingId: { followerId: currentUserId, followingId: user.id } },
+  });
+
+  return { ...user, isFollowedByMe: !!isFollowed };
+}
 
 export async function uploadAvatar(
   userId: string, // user id ro migire 
