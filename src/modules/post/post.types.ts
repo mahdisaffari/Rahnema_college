@@ -44,9 +44,14 @@ export interface PostApiResponse {
 export interface CreatePostResponse {
   success: boolean;
   message: string;
-  data?: PostDTO;
+  data?: {
+    id: string;
+    caption: string | null;
+    images: PostImageDTO[];
+    createdAt: string;
+    mentions?: { userId: string; username: string }[];
+  };
 }
-
 export interface ValidateAllResponse {
   success: boolean;
   message: string;

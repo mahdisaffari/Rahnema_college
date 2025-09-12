@@ -29,14 +29,12 @@ export async function createPostWithImages(
   images: Express.Multer.File[],
   mentions: string[] | undefined 
 ): Promise<PostResponse> {
-  if (!images || images.length === 0) throw new Error('No images provided'); // baresi in ke image bashe
+  if (!images || images.length === 0) throw new Error('No images provided');
 
-   
   const uploadedUrls: string[] = await Promise.all(
     images.map((file) => uploadBufferToMinIO(file.buffer, file.originalname, 'posts'))
   );
 
-  // afzayesh tedad post karbar
   const created = await prisma.post.create({
     data: {
       caption: caption ?? null,
@@ -77,7 +75,7 @@ export async function createPostWithImages(
     bookmarkCount: created.bookmarkCount || 0,
     user: created.user,
     isOwner: true,
-    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
+    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })), // منشن‌ها برگردانده می‌شوند
   };
 }
 
