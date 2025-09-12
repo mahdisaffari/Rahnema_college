@@ -1,4 +1,3 @@
-
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { normEmail, RegisterSchema, LoginSchema } from "../../utils/validators";
@@ -25,7 +24,6 @@ export const register = async (username: string, email: string, password: string
 };
 
 export const login = async (identifier: string, password: string) => {
-
   LoginSchema.parse({ identifier, password });
 
   const isEmailLogin = identifier.includes("@");
@@ -38,5 +36,6 @@ export const login = async (identifier: string, password: string) => {
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) throw new Error("اعتبارنامه‌های نامعتبر");
 
-  return signAccessToken({ id: user.id, username: user.username, email: user.email } as AuthUser);
+  const token = signAccessToken({ id: user.id, username: user.username, email: user.email } as AuthUser);
+  return { token, username: user.username }; 
 };

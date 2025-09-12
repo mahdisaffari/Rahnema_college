@@ -4,8 +4,6 @@ import { validateLogin, validateRegister } from './auth.validator';
 import { clearAuthCookies, setAuthCookies } from '../../utils/jwt';
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from './auth.types';
 import { handleError } from '../../utils/errorHandler';
-import jwt from "jsonwebtoken";
-import { env } from '../../config/env';
 
 export async function register(req: Request<{}, {}, RegisterRequest>, res: Response<RegisterResponse>) {
   try {
@@ -22,12 +20,11 @@ export async function login(req: Request<{}, {}, LoginRequest>, res: Response<Lo
   try {
     const error = validateLogin(req.body);
     if (error) return res.status(400).json({ success: false, message: error });
-    const token = await authService.login(req.body.identifier, req.body.password);
-    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as { username: string };
+    const { token, username } = await authService.login(req.body.identifier, req.body.password);
     setAuthCookies(res, token);
-    return res.json({ success: true, message: 'ورود موفق', token, username: decoded.username });
+    return res.json({ success: true, message: 'ورود با موفقیت انجام شد', token, username }); 
   } catch (error) {
-    return handleError(error, res, 'اعتبارنامه نامعتبر', 401);
+    return handleError(error, res, 'اعتبارنامه‌های نامعتبر', 401);
   }
 }
 
