@@ -18,12 +18,11 @@ build-image:
       cat > /kaniko/.docker/config.json <<EOF
       {"auths":{"$CI_REGISTRY":{"username":"$REGISTRY_USER","password":"$REGISTRY_PASSWORD"}}}
       EOF
-script:
-  - /kaniko/executor
-    --context "$CI_PROJECT_DIR"
-    --dockerfile "$CI_PROJECT_DIR/Dockerfile"
-    --destination "$CI_REGISTRY_IMAGE:latest"
-
+  script:
+    - /kaniko/executor
+      --context "."
+      --dockerfile "./Dockerfile"
+      --destination "$CI_REGISTRY_IMAGE:latest"
 
 #  only:
 #    - feat/config-cicd
