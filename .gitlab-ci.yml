@@ -5,21 +5,32 @@ stages:
 
 build-image:
   stage: build
-  image: docker:27
-  services:
-    - name: docker:27-dind
-      alias: docker
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_DRIVER: overlay2
+  image:
+    name: gcr.io/kaniko-project/executor:latest
+    entrypoint: [""]
   only:
     - feat/config-cicd
+  variables:
+    DOCKER_CONFIG: /kaniko/.docker/
   before_script:
-    - echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - mkdir -p /kaniko/.docker
+    - |
+      cat > /kaniko/.docker/config.json <<EOF
+      {"auths":{"$CI_REGISTRY":{"username":"$REGISTRY_USER","password":"$REGISTRY_PASSWORD"}}}
+      EOF
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:latest
+    - /kaniko/executor
+      --context "$CI_PROJECT_DIR"
+      --dockerfile "$CI_PROJECT_DIR/Dockerfile"
+      --destination "$CI_REGISTRY_IMAGE:latest"
+
+#  only:
+#    - feat/config-cicd
+#  before_script:
+#    - echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin $CI_REGISTRY
+#  script:
+#    - docker build -t $CI_REGISTRY_IMAGE:latest .
+#    - docker push $CI_REGISTRY_IMAGE:latest
 
 deploy-to-server:
   stage: deploy
