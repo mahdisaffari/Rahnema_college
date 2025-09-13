@@ -19,7 +19,6 @@ const ACCESS_COOKIE_NAME = "access_token";
 
 export function auth(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies?.[ACCESS_COOKIE_NAME] as string | undefined;
-  console.log('Auth middleware - token:', token ? 'present' : 'missing'); // Debug log
   if (!token) {
     (req as AuthRequest).user = undefined;
     return next();
@@ -27,11 +26,9 @@ export function auth(req: Request, res: Response, next: NextFunction) {
 
   try {
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as { sub: string; username: string; email: string };
-    console.log('Auth middleware - decoded:', decoded); // Debug log
     (req as AuthRequest).user = { id: decoded.sub, username: decoded.username, email: decoded.email };
     next();
   } catch (error) {
-    console.log('Auth middleware - error:', error); // Debug log
     (req as AuthRequest).user = undefined;
     next();
   }
