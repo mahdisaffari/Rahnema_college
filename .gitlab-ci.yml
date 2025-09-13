@@ -10,7 +10,7 @@ deploy-to-server:
     - set -euo pipefail
     - apk add --no-cache openssh-client sshpass   # install ssh + sshpass
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - #echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
+#    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
 #    - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -T 5 -p "${SSH_PORT_SERVER:-22}" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
   script:
