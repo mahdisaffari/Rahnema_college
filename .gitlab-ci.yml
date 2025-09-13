@@ -10,17 +10,25 @@ deploy-to-server:
     - set -euo pipefail
     - apk add --no-cache openssh-client rsync
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    # Validate required environment variables first
+    - |
+      if [ -z "${SSH_HOST_SERVER:-}" ] || [ -z "${SSH_USER_SERVER:-}" ] || [ -z "${SSH_PRIVATE_KEY_SERVER:-}" ]; then
+        echo "❌ Error: Required SSH environment variables are not set"
+        echo "Please set the following variables in GitLab CI/CD settings:"
+        echo "  - SSH_HOST_SERVER (your server IP: 188.121.116.152)"
+        echo "  - SSH_USER_SERVER (your SSH username: ubuntu)"
+        echo "  - SSH_PRIVATE_KEY_SERVER (your private SSH key content)"
+        echo ""
+        echo "To set these variables:"
+        echo "1. Go to your GitLab project"
+        echo "2. Settings → CI/CD → Variables"
+        echo "3. Add each variable with the appropriate value"
+        exit 1
+      fi
     - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -T 5 -p "${SSH_PORT_SERVER:-22}" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
   script:
-    # Validate required environment variables
-    - |
-      if [ -z "$SSH_HOST_SERVER" ] || [ -z "$SSH_USER_SERVER" ] || [ -z "$SSH_PRIVATE_KEY_SERVER" ]; then
-        echo "Error: Required SSH environment variables are not set"
-        echo "Please set: SSH_HOST_SERVER, SSH_USER_SERVER, SSH_PRIVATE_KEY_SERVER"
-        exit 1
-      fi
     
     # Test SSH connection
     - |
