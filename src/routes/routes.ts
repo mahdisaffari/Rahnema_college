@@ -27,7 +27,7 @@ router.put("/profile", auth, upload.single("avatar"), validateProfileUpdateMiddl
 router.get("/profile/posts", auth, getPostProfileHandler);
 
 // مسیرهای کاربر
-router.get("/users/:username", validateUsernameMiddleware, getUserHandler);
+router.get("/users/:username", auth, validateUsernameMiddleware, getUserHandler);
 
 // مسیرهای پست
 router.post("/posts", auth, upload.array("images", 5), validateAllMiddleware, createSetupPostHandler);
@@ -43,7 +43,7 @@ router.post("/posts/:id/like", auth, likePostHandler);
 
 // مسیرهای فالو/آنفالو
 router.post("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
-router.delete("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
+//router.delete("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
 
 // مسیرهای فالوورها و فالویینگ‌ها
 router.get("/users/followers", auth, getFollowersHandler);
