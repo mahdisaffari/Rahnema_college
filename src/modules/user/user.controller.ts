@@ -8,7 +8,7 @@ import { handleError } from '../../utils/errorHandler';
 
 export async function getProfileHandler(req: AuthRequest, res: Response<UserApiResponse<ProfileResponse>>) {
   try {
-    const user = await getProfile(req.user!.id);
+    const user = await getProfile(req.user!.id, req.user!.id);
     if (!user) return res.status(404).json({ success: false, message: 'کاربر یافت نشد' });
     return res.json({ success: true, message: 'پروفایل با موفقیت دریافت شد', data: user });
   } catch (error) {
@@ -16,11 +16,11 @@ export async function getProfileHandler(req: AuthRequest, res: Response<UserApiR
   }
 }
 
-
 export async function getUserHandler(req: Request, res: Response<UserApiResponse<UserResponse>>) {
   try {
     const username = req.params.username;
-    const user = await getUserByUsername(username);
+    const currentUserId = (req as AuthRequest).user?.id || ''; // Get current user ID if authenticated
+    const user = await getUserByUsername(username, currentUserId);
     if (!user) return res.status(404).json({ success: false, message: 'کاربر یافت نشد' });
     return res.json({ success: true, message: 'اطلاعات کاربر با موفقیت دریافت شد', data: user });
   } catch (error) {
@@ -54,5 +54,4 @@ export async function updateProfileHandler(req: AuthRequest, res: Response<UserA
   } catch (error) {
     return handleError(error, res, 'خطا در بروزرسانی پروفایل');
   }
-  
 }
