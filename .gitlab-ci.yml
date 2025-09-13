@@ -8,14 +8,50 @@ deploy-to-server:
     - feat/config-cicd
   before_script:
     - set -euo pipefail
-    - apk add --no-cache openssh-client sshpass   # install ssh + sshpass
+    - apk add --no-cache openssh-client rsync
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-#    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
-#    - chmod 600 ~/.ssh/id_rsa
+    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -T 5 -p "${SSH_PORT_SERVER:-22}" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
   script:
-    - >
-      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no
-      -p "${SSH_PORT_SERVER:-22}"
-      "$SSH_USER_SERVER@$SSH_HOST_SERVER"
-      "echo Connected OK"
+    # Validate required environment variables
+    - |
+      if [ -z "$SSH_HOST_SERVER" ] || [ -z "$SSH_USER_SERVER" ] || [ -z "$SSH_PRIVATE_KEY_SERVER" ]; then
+        echo "Error: Required SSH environment variables are not set"
+        echo "Please set: SSH_HOST_SERVER, SSH_USER_SERVER, SSH_PRIVATE_KEY_SERVER"
+        exit 1
+      fi
+    
+    # Test SSH connection
+    - |
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
+          -p "${SSH_PORT_SERVER:-22}" \
+          "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
+          "echo 'SSH connection successful'"
+    
+    # Create deployment directory on server
+    - |
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          -p "${SSH_PORT_SERVER:-22}" \
+          "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
+          "mkdir -p ${DEPLOY_PATH:-/var/www/codechefs-backend}"
+    
+    # Copy application files to server
+    - |
+      rsync -avz --delete \
+          -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${SSH_PORT_SERVER:-22}" \
+          . \
+          "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/var/www/codechefs-backend}/" \
+          --exclude='.git' --exclude='node_modules' --exclude='.env'
+    
+    # Install dependencies and restart services
+    - |
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          -p "${SSH_PORT_SERVER:-22}" \
+          "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
+          "cd ${DEPLOY_PATH:-/var/www/codechefs-backend} && \
+           npm ci && \
+           pm2 restart codechefs-backend || pm2 start src/index.js --name codechefs-backend"
+    
+    # Clean up SSH key
+    - rm -f ~/.ssh/id_rsa
