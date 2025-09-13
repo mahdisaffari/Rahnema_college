@@ -1,28 +1,28 @@
 stages:
-  - build
+#  - build
   - deploy
 
 
-build-image:
-  stage: build
-  image:
-    name: gcr.io/kaniko-project/executor:latest
-    entrypoint: [""]
-  only:
-    - feat/config-cicd
-  variables:
-    DOCKER_CONFIG: /kaniko/.docker/
-  before_script:
-    - mkdir -p /kaniko/.docker
-    - |
-      cat > /kaniko/.docker/config.json <<EOF
-      {"auths":{"$CI_REGISTRY":{"username":"$REGISTRY_USER","password":"$REGISTRY_PASSWORD"}}}
-      EOF
-  script:
-    - /kaniko/executor
-      --context "."
-      --dockerfile "./Dockerfile"
-      --destination "$CI_REGISTRY_IMAGE:latest"
+#build-image:
+#  stage: build
+#  image:
+#    name: gcr.io/kaniko-project/executor:latest
+#    entrypoint: [""]
+#  only:
+#    - feat/config-cicd
+#  variables:
+#    DOCKER_CONFIG: /kaniko/.docker/
+#  before_script:
+#    - mkdir -p /kaniko/.docker
+#    - |
+#      cat > /kaniko/.docker/config.json <<EOF
+#      {"auths":{"$CI_REGISTRY":{"username":"$REGISTRY_USER","password":"$REGISTRY_PASSWORD"}}}
+#      EOF
+#  script:
+#    - /kaniko/executor
+#      --context "."
+#      --dockerfile "./Dockerfile"
+#      --destination "$CI_REGISTRY_IMAGE:latest"
 
 #  only:
 #    - feat/config-cicd
