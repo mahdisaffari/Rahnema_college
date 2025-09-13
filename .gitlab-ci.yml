@@ -3,11 +3,11 @@ stages:
 
 deploy-to-server:
   stage: deploy
-  image: alpine:3.20
+  image: registry.example.com/your/alpine-ssh:3.20
   only:
     - feat/config-cicd
-  before_script:
-    - sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirror.example.com/alpine/|g' /etc/apk/repositories
+#  before_script:
+#    - sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirror.example.com/alpine/|g' /etc/apk/repositories
     - apk update
     - apk add --no-cache openssh-client sshpass
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
