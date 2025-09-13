@@ -25,9 +25,33 @@ deploy-to-server:
         echo "3. Add each variable with the appropriate value"
         exit 1
       fi
-    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
+    # Create SSH key file with proper formatting
+    - |
+      echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
+      chmod 600 ~/.ssh/id_rsa
+      # Verify the key file was created properly
+      if [ ! -f ~/.ssh/id_rsa ]; then
+        echo "❌ Error: SSH key file was not created"
+        exit 1
+      fi
+      # Check if the key file has content
+      if [ ! -s ~/.ssh/id_rsa ]; then
+        echo "❌ Error: SSH key file is empty"
+        exit 1
+      fi
+      echo "✅ SSH key file created successfully"
+    # Add server to known_hosts
     - ssh-keyscan -T 5 -p "${SSH_PORT_SERVER:-22}" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
+    # Test SSH key format
+    - |
+      echo "🔍 Testing SSH key format..."
+      if ssh-keygen -l -f ~/.ssh/id_rsa >/dev/null 2>&1; then
+        echo "✅ SSH key format is valid"
+      else
+        echo "❌ Error: SSH key format is invalid"
+        echo "Please ensure your private key is in OpenSSH format"
+        exit 1
+      fi
   script:
     
     # Test SSH connection
