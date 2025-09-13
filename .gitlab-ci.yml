@@ -34,7 +34,7 @@ stages:
 
 deploy-to-server:
   stage: deploy
-  needs: [ "build-image" ]
+#  needs: [ "build-image" ]
   image: alpine:3.20
   only:
     - feat/config-cicd
