@@ -7,6 +7,8 @@ deploy-to-server:
   only:
     - feat/config-cicd
   before_script:
+    - sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirror.example.com/alpine/|g' /etc/apk/repositories
+    - apk update
     - apk add --no-cache openssh-client sshpass
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
     - ssh-keyscan -p "$SSH_PORT_SERVER" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts
