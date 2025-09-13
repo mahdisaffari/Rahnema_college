@@ -3,7 +3,7 @@ stages:
 
 deploy-to-server:
   stage: deploy
-  image: registry.example.com/your/alpine-ssh:3.20
+  image: alpine:3.20
   only:
     - feat/config-cicd
 #  before_script:
