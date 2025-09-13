@@ -19,6 +19,8 @@ deploy-to-server:
 #      "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
 #      "echo Connected OK"
   before_script:
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
     - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
   script:
