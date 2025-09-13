@@ -8,13 +8,23 @@ deploy-to-server:
     - feat/config-cicd
 #  before_script:
 #    - sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirror.example.com/alpine/|g' /etc/apk/repositories
-    - apk update
-    - apk add --no-cache openssh-client sshpass
-    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - ssh-keyscan -p "$SSH_PORT_SERVER" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts
+#    - apk update
+#    - apk add --no-cache openssh-client sshpass
+#    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+#    - ssh-keyscan -p "$SSH_PORT_SERVER" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts
+#  script:
+#    - sshpass -p "$SSH_PASSWORD_SERVER" \
+#      ssh -o StrictHostKeyChecking=no \
+#      -p "$SSH_PORT_SERVER" \
+#      "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
+#      "echo Connected OK"
+  before_script:
+    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
   script:
-    - sshpass -p "$SSH_PASSWORD_SERVER" \
-      ssh -o StrictHostKeyChecking=no \
-      -p "$SSH_PORT_SERVER" \
-      "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
+    - >
+      ssh -i ~/.ssh/id_rsa
+      -o StrictHostKeyChecking=no
+      -p "$SSH_PORT_SERVER"
+      "$SSH_USER_SERVER@$SSH_HOST_SERVER"
       "echo Connected OK"
