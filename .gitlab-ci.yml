@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+deploy-to-server:
+  stage: deploy
+  only:
+    - feat/config-cicd
+  before_script:
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -p "$SSH_PORT_SERVER" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts
+  script:
+    - sshpass -p "$SSH_PASSWORD_SERVER" ssh -p "$SSH_PORT_SERVER" "$SSH_USER_SERVER@$SSH_HOST_SERVER" "echo Connected OK"
