@@ -1,13 +1,30 @@
 stages:
+  - build
   - deploy
 
-deploy-to-server:
-  stage: deploy
+
+build-image:
+  stage: build
+  image: docker:27
+  services: [docker:27-dind]
   only:
     - feat/config-cicd
   before_script:
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' | ssh-add -
+    - echo "$REGISTRY_PASSWORD" | docker login -u "$REGISTRY_USER" --password-stdin $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:latest
+
+deploy-to-server:
+  stage: deploy
+  needs: [ "build-image" ]
+  image: alpine:3.20
+  only:
+    - feat/config-cicd
+  before_script:
+#    - eval $(ssh-agent -s)
+#    - echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' | ssh-add -
+    - apk add --no-cache openssh-client sshpass
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -p "$SSH_PORT_SERVER" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts
