@@ -8,9 +8,9 @@ const prisma = new PrismaClient();
 
 // ye user migire profile ro mide bedone pass
 export async function getProfile(userId: string, currentUserId: string): Promise<ProfileResponse | null> {
-  const user = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({ // faghad ye karbar ba in id bar migarde
     where: { id: userId },
-    select: {
+    select: {// fild haro moshakhas mikonim
       id: true,
       username: true,
       email: true,
@@ -27,11 +27,16 @@ export async function getProfile(userId: string, currentUserId: string): Promise
   if (!user) return null;
 
   // Check if the current user follows this user
-  const isFollowed = await prisma.follow.findUnique({
-    where: { followerId_followingId: { followerId: currentUserId, followingId: userId } },
-  });
+  let isFollowed = false;
+  if (currentUserId && userId !== currentUserId) { // Only check if different users
+    const followRecord = await prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId: currentUserId, followingId: userId } },
+    });
+    console.log('Follow check:', { currentUserId, followingId: userId, followRecord }); // Debug log
+    isFollowed = !!followRecord;
+  }
 
-  return { ...user, isFollowedByMe: !!isFollowed };
+  return { ...user, isFollowedByMe: isFollowed };
 }
 
 export async function getUserByUsername(username: string, currentUserId: string): Promise<UserResponse | null> {
@@ -53,11 +58,16 @@ export async function getUserByUsername(username: string, currentUserId: string)
   if (!user) return null;
 
   // Check if the current user follows this user
-  const isFollowed = await prisma.follow.findUnique({
-    where: { followerId_followingId: { followerId: currentUserId, followingId: user.id } },
-  });
+  let isFollowed = false;
+  if (currentUserId && user.id !== currentUserId) { // Only check if different users
+    const followRecord = await prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId: currentUserId, followingId: user.id } },
+    });
+    console.log('Follow check:', { currentUserId, followingId: user.id, followRecord }); // Debug log
+    isFollowed = !!followRecord;
+  }
 
-  return { ...user, isFollowedByMe: !!isFollowed };
+  return { ...user, isFollowedByMe: isFollowed };
 }
 
 export async function uploadAvatar(
@@ -112,9 +122,9 @@ export async function updateProfile(
   //agar email sakht
   if (data.email) {
     const normalizedEmail = normEmail(data.email);
-    console.log("Checking email:", normalizedEmail, "for userId:", userId); // لاگ برای دیباگ
+    console.log("Checking email:", normalizedEmail, "for userId:", userId); 
     const existingUser = await prisma.user.findFirst({ where: { email: normalizedEmail, NOT: { id: userId } } });
-    console.log("Found user:", existingUser); // لاگ برای چک کردن نتیجه
+    console.log("Found user:", existingUser); 
     if (existingUser) throw new Error('ایمیل تکراری است');
     updateData.email = normalizedEmail;  // ok bod update kon
   }

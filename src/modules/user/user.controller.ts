@@ -8,6 +8,7 @@ import { handleError } from '../../utils/errorHandler';
 
 export async function getProfileHandler(req: AuthRequest, res: Response<UserApiResponse<ProfileResponse>>) {
   try {
+    if (!req.user?.id) throw new Error('کاربر احراز هویت نشده است');
     const user = await getProfile(req.user!.id, req.user!.id);
     if (!user) return res.status(404).json({ success: false, message: 'کاربر یافت نشد' });
     return res.json({ success: true, message: 'پروفایل با موفقیت دریافت شد', data: user });
@@ -20,6 +21,7 @@ export async function getUserHandler(req: Request, res: Response<UserApiResponse
   try {
     const username = req.params.username;
     const currentUserId = (req as AuthRequest).user?.id || ''; // Get current user ID if authenticated
+    console.log('Current user ID:', currentUserId); // Debug log
     const user = await getUserByUsername(username, currentUserId);
     if (!user) return res.status(404).json({ success: false, message: 'کاربر یافت نشد' });
     return res.json({ success: true, message: 'اطلاعات کاربر با موفقیت دریافت شد', data: user });
