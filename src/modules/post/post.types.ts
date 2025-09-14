@@ -33,9 +33,13 @@ export interface PostResponse {
     avatar: string | null;
   };
   isOwner?: boolean;
+  isLiked?: boolean; 
+  isBookmarked?: boolean;
   mentions?: { userId: string; username: string }[];
   hashtags?: string[];
 }
+
+// بقیه فایل بدون تغییر
 
 export interface PostApiResponse {
   success: boolean;

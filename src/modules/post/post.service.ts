@@ -112,7 +112,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       createdAt: true,
       likeCount: true,
       bookmarkCount: true,
-      commentCount: true, // afzodan commentCount be select
+      commentCount: true, 
       user: {
         select: {
           id: true,
@@ -128,6 +128,18 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       hashtags: {
         include: { hashtag: { select: { name: true } } },
       },
+      likes: currentUserId
+        ? {
+            where: { userId: currentUserId },
+            select: { id: true },
+          }
+        : false,
+      bookmarks: currentUserId
+        ? {
+            where: { userId: currentUserId },
+            select: { id: true },
+          }
+        : false,
     },
   });
   if (!post) return null;
@@ -138,11 +150,13 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     createdAt: post.createdAt.toISOString(),
     likeCount: post.likeCount,
     bookmarkCount: post.bookmarkCount,
-    commentCount: post.commentCount, // afzodan commentCount be response
+    commentCount: post.commentCount, 
     user: post.user,
     isOwner: currentUserId ? post.user.id === currentUserId : false,
+    isLiked: currentUserId ? post.likes.length > 0 : false, 
+    isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
     mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
-    hashtags: post.hashtags.map((h) => h.hashtag.name),
+    hashtags: post.hashtags.map((h) => h.hashtag.name), 
   };
 }
 
@@ -172,13 +186,25 @@ export async function getUserPosts(
           createdAt: true,
           likeCount: true,
           bookmarkCount: true,
-          commentCount: true, // afzodan commentCount be select
+          commentCount: true, 
           mentions: {
             include: { user: { select: { id: true, username: true } } },
           },
           hashtags: {
             include: { hashtag: { select: { name: true } } },
           },
+          likes: currentUserId
+            ? {
+                where: { userId: currentUserId },
+                select: { id: true },
+              }
+            : false,
+          bookmarks: currentUserId
+            ? {
+                where: { userId: currentUserId },
+                select: { id: true },
+              }
+            : false,
         },
       },
     },
@@ -201,7 +227,7 @@ export async function getUserPosts(
       createdAt: post.createdAt.toISOString(),
       likeCount: post.likeCount,
       bookmarkCount: post.bookmarkCount,
-      commentCount: post.commentCount, // afzodan commentCount be response
+      commentCount: post.commentCount, 
       user: {
         id: user.id,
         username: user.username,
@@ -210,8 +236,10 @@ export async function getUserPosts(
         avatar: user.avatar,
       },
       isOwner: currentUserId ? user.id === currentUserId : false,
+      isLiked: currentUserId ? post.likes.length > 0 : false, 
+      isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
       mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
-      hashtags: post.hashtags.map((h) => h.hashtag.name),
+      hashtags: post.hashtags.map((h) => h.hashtag.name), 
     })),
   };
 }
