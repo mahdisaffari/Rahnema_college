@@ -19,6 +19,7 @@ import { getHomepageHandler } from "../modules/user/homepage/homepage.controller
 import { validateHomepageMiddleware } from "../modules/user/homepage/homepage.middleware";
 
 const router = Router();
+//const searchByPostController = new SearchByPostController();
 
 // مسیرهای احراز هویت
 router.post("/register", register);
@@ -58,5 +59,8 @@ router.get("/users/followings", auth, getFollowingsHandler);
 
 // مسیر هوم‌پیج
 router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
+
+
+//router.get('/search/posts', authMiddleware, searchByPostController.getPostsByHashtag.bind(searchByPostController));
 
 export default router;
