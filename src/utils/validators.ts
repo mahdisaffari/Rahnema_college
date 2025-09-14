@@ -3,17 +3,13 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
- // GET /search/posts
+// GET /search/posts
 export const SearchPostsSchema = z.object({
   q: z
     .string()
     .min(1, "هشتگ الزامی است")
     .regex(/^#[\w+#]+/, "هشتگ‌ها باید با # شروع شوند و معتبر باشند"), // پشتیبانی از #fun+#travel
-  page: z.coerce
-    .number()
-    .int()
-    .min(1, "صفحه باید حداقل ۱ باشد")
-    .default(1),
+  page: z.coerce.number().int().min(1, "صفحه باید حداقل ۱ باشد").default(1),
   limit: z.coerce
     .number()
     .int()
@@ -50,31 +46,26 @@ export async function validateSearchPosts(data: {
 }
 
 export const CreatePostSchema = z.object({
-caption: z
-  .string()
-  .max(300, "کپشن باید حداکثر ۳۰۰ کاراکتر باشد")
-  .optional(),
+  caption: z.string().max(300, "کپشن باید حداکثر ۳۰۰ کاراکتر باشد").optional(),
 
-images: z
-  .array(
-    z.object({
-      mimetype: z
-        .string()
-        .refine((val) => val.startsWith("image/"), {
+  images: z
+    .array(
+      z.object({
+        mimetype: z.string().refine((val) => val.startsWith("image/"), {
           message: "فقط تصویر مجاز است",
         }),
-      size: z
-        .number()
-        .max(5 * 1024 * 1024, "حجم تصویر باید کمتر از ۵ مگابایت باشد"),
-    })
-  )
-  .max(5, "حداکثر ۵ تصویر")
-  .min(1, "حداقل یک تصویر الزامی است"),
+        size: z
+          .number()
+          .max(5 * 1024 * 1024, "حجم تصویر باید کمتر از ۵ مگابایت باشد"),
+      })
+    )
+    .max(5, "حداکثر ۵ تصویر")
+    .min(1, "حداقل یک تصویر الزامی است"),
 
-mentions: z
-  .array(z.string().min(1, "نام کاربری الزامی است"))
-  .optional()
-  .default([]), 
+  mentions: z
+    .array(z.string().min(1, "نام کاربری الزامی است"))
+    .optional()
+    .default([]),
 });
 
 export function extractMentions(caption: string): string[] {
@@ -89,7 +80,9 @@ export function extractHashtags(caption: string): string[] {
   return matches.map((m) => m.slice(1).toLowerCase());
 }
 
-export async function validateMentions(usernames: string[]): Promise<string | null> {
+export async function validateMentions(
+  usernames: string[]
+): Promise<string | null> {
   if (usernames.length === 0) return null;
   try {
     const existingUsers = await prisma.user.findMany({
@@ -97,7 +90,9 @@ export async function validateMentions(usernames: string[]): Promise<string | nu
       select: { username: true },
     });
     const existingUsernames = existingUsers.map((u) => u.username);
-    const invalidMentions = usernames.filter((u) => !existingUsernames.includes(u));
+    const invalidMentions = usernames.filter(
+      (u) => !existingUsernames.includes(u)
+    );
     if (invalidMentions.length > 0) {
       return `چنین یوزری نداریم: ${invalidMentions.join(", ")}`;
     }
@@ -107,7 +102,9 @@ export async function validateMentions(usernames: string[]): Promise<string | nu
   }
 }
 
-export async function validateHashtags(hashtags: string[]): Promise<string | null> {
+export async function validateHashtags(
+  hashtags: string[]
+): Promise<string | null> {
   if (hashtags.length === 0) return null;
   try {
     const existingHashtags = await prisma.hashtag.findMany({
@@ -115,7 +112,9 @@ export async function validateHashtags(hashtags: string[]): Promise<string | nul
       select: { name: true },
     });
     const existingHashtagNames = existingHashtags.map((h) => h.name);
-    const newHashtags = hashtags.filter((h) => !existingHashtagNames.includes(h));
+    const newHashtags = hashtags.filter(
+      (h) => !existingHashtagNames.includes(h)
+    );
     if (newHashtags.length > 0) {
       await prisma.hashtag.createMany({
         data: newHashtags.map((name) => ({ name })),
@@ -128,11 +127,18 @@ export async function validateHashtags(hashtags: string[]): Promise<string | nul
   }
 }
 
-export const validateGetHomepage = (data: { page: number; limit: number }): { page?: string; limit?: string } => {
+export const validateGetHomepage = (data: {
+  page: number;
+  limit: number;
+}): { page?: string; limit?: string } => {
   try {
     const schema = z.object({
       page: z.number().int().min(1, "صفحه باید عدد مثبت باشد"),
-      limit: z.number().int().min(1, "حد باید حداقل ۱ باشد").max(10, "حد حداکثر ۱۰ است"), 
+      limit: z
+        .number()
+        .int()
+        .min(1, "حد باید حداقل ۱ باشد")
+        .max(10, "حد حداکثر ۱۰ است"),
     });
     schema.parse(data);
     return {};
@@ -155,7 +161,9 @@ export const CreateCommentSchema = z.object({
     .max(500, "محتوای کامنت باید کمتر از ۵۰۰ کاراکتر باشد"),
 });
 
-export async function validateCreateComment(data: { content: string }): Promise<{ content?: string | null }> {
+export async function validateCreateComment(data: {
+  content: string;
+}): Promise<{ content?: string | null }> {
   try {
     CreateCommentSchema.parse(data);
     return { content: null };
@@ -175,11 +183,16 @@ export const CreateReplySchema = z.object({
     .max(500, "محتوای ریپلای باید کمتر از ۵۰۰ کاراکتر باشد"),
 });
 
-export async function validateCreateReply(data: { content: string; commentId: string }): Promise<{ content?: string | null; commentId?: string | null }> {
+export async function validateCreateReply(data: {
+  content: string;
+  commentId: string;
+}): Promise<{ content?: string | null; commentId?: string | null }> {
   try {
     CreateReplySchema.parse({ content: data.content });
     z.string().uuid("شناسه کامنت نامعتبر است").parse(data.commentId);
-    const comment = await prisma.comment.findUnique({ where: { id: data.commentId } });
+    const comment = await prisma.comment.findUnique({
+      where: { id: data.commentId },
+    });
     if (!comment) return { commentId: "کامنت یافت نشد" };
     return { content: null, commentId: null };
   } catch (error) {
@@ -193,10 +206,14 @@ export async function validateCreateReply(data: { content: string; commentId: st
   }
 }
 
-export async function validateCommentId(data: { commentId: string }): Promise<{ commentId?: string | null }> {
+export async function validateCommentId(data: {
+  commentId: string;
+}): Promise<{ commentId?: string | null }> {
   try {
     z.string().uuid("شناسه کامنت نامعتبر است").parse(data.commentId);
-    const comment = await prisma.comment.findUnique({ where: { id: data.commentId } });
+    const comment = await prisma.comment.findUnique({
+      where: { id: data.commentId },
+    });
     if (!comment) return { commentId: "کامنت یافت نشد" };
     return { commentId: null };
   } catch (error) {
@@ -208,11 +225,23 @@ export async function validateCommentId(data: { commentId: string }): Promise<{ 
 }
 
 // validator baraye GET /posts/:id/comments
-export async function validateGetPostComments(data: { postId: string; page: number; limit: number }): Promise<{ postId?: string | null; page?: string | null; limit?: string | null }> {
+export async function validateGetPostComments(data: {
+  postId: string;
+  page: number;
+  limit: number;
+}): Promise<{
+  postId?: string | null;
+  page?: string | null;
+  limit?: string | null;
+}> {
   const schema = z.object({
     postId: z.string().uuid("شناسه پست نامعتبر است"),
     page: z.number().int().min(1, "صفحه باید حداقل ۱ باشد"),
-    limit: z.number().int().min(1, "حد باید حداقل ۱ باشد").max(50, "حد حداکثر ۵۰ است"),
+    limit: z
+      .number()
+      .int()
+      .min(1, "حد باید حداقل ۱ باشد")
+      .max(50, "حد حداکثر ۵۰ است"),
   });
 
   try {
@@ -235,11 +264,19 @@ export async function validateGetUserPosts(data: {
   username: string;
   page: number;
   limit: number;
-}): Promise<{ username?: string | null; page?: string | null; limit?: string | null }> {
+}): Promise<{
+  username?: string | null;
+  page?: string | null;
+  limit?: string | null;
+}> {
   const schema = z.object({
     username: z.string().min(1, "نام کاربری الزامی است"),
     page: z.number().int().min(1, "صفحه باید حداقل ۱ باشد"),
-    limit: z.number().int().min(1, "حد باید حداقل ۱ باشد").max(100, "حد حداکثر ۱۰۰ است"),
+    limit: z
+      .number()
+      .int()
+      .min(1, "حد باید حداقل ۱ باشد")
+      .max(100, "حد حداکثر ۱۰۰ است"),
   });
 
   try {
@@ -266,7 +303,8 @@ export async function validateGetUserPosts(data: {
 export const ProfileUpdateSchema = z.object({
   firstname: z
     .union([
-      z.string()
+      z
+        .string()
         .max(50, "نام باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
         .refine((val) => val.trim().length > 0, "نام باید رشته غیرخالی باشد"),
       z.null(),
@@ -274,17 +312,25 @@ export const ProfileUpdateSchema = z.object({
     .optional(),
   lastname: z
     .union([
-      z.string()
+      z
+        .string()
         .max(50, "نام خانوادگی باید رشته غیرخالی باشد (حداکثر 50 کاراکتر)")
-        .refine((val) => val.trim().length > 0, "نام خانوادگی باید رشته غیرخالی باشد"),
+        .refine(
+          (val) => val.trim().length > 0,
+          "نام خانوادگی باید رشته غیرخالی باشد"
+        ),
       z.null(),
     ])
     .optional(),
   bio: z
     .union([
-      z.string()
+      z
+        .string()
         .max(500, "بیوگرافی باید رشته غیرخالی باشد (حداکثر 500 کاراکتر)")
-        .refine((val) => val.trim().length > 0, "بیوگرافی باید رشته غیرخالی باشد"),
+        .refine(
+          (val) => val.trim().length > 0,
+          "بیوگرافی باید رشته غیرخالی باشد"
+        ),
       z.null(),
     ])
     .optional(),
@@ -306,7 +352,9 @@ export const ProfileUpdateSchema = z.object({
         mimetype: z.string().refine((val) => val.startsWith("image/"), {
           message: "فقط فایل‌های تصویری مجاز هستند",
         }),
-        size: z.number().max(5 * 1024 * 1024, "سایز فایل باید کمتر از ۵ مگابایت باشد"),
+        size: z
+          .number()
+          .max(5 * 1024 * 1024, "سایز فایل باید کمتر از ۵ مگابایت باشد"),
       }),
       z.null(),
     ])
@@ -317,7 +365,10 @@ export const RegisterSchema = z.object({
   username: z
     .string()
     .min(5, "نام کاربری الزامی است و باید حداقل ۵ کاراکتر باشد")
-    .refine((val) => val.trim().length > 0, "نام کاربری الزامی است و باید حداقل ۵ کاراکتر باشد"),
+    .refine(
+      (val) => val.trim().length > 0,
+      "نام کاربری الزامی است و باید حداقل ۵ کاراکتر باشد"
+    ),
   email: z
     .string()
     .email("ایمیل معتبر الزامی است")
