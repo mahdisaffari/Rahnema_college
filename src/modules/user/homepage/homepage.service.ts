@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { HomepagePostResponse } from './homepage.types'; // HomepageResponse رو حذف کردم چون در controller استفاده می‌شه
+import { HomepagePostResponse } from './homepage.types';
 
 const prisma = new PrismaClient();
 
