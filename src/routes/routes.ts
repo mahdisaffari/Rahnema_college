@@ -61,6 +61,6 @@ router.get("/users/followings", auth, getFollowingsHandler);
 router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
 
 
-//router.get('/search/posts', authMiddleware, searchByPostController.getPostsByHashtag.bind(searchByPostController));
+//router.get("/search/posts", auth, searchByPostController.getPostsByHashtag.bind(searchByPostController));
 
 export default router;
