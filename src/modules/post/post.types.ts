@@ -39,8 +39,6 @@ export interface PostResponse {
   hashtags?: string[];
 }
 
-// بقیه فایل بدون تغییر
-
 export interface PostApiResponse {
   success: boolean;
   message: string;
