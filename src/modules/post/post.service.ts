@@ -75,7 +75,7 @@ export async function createPostWithImages(
     bookmarkCount: created.bookmarkCount || 0,
     user: created.user,
     isOwner: true,
-    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })), // منشن‌ها برگردانده می‌شوند
+    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })), 
   };
 }
 
@@ -102,9 +102,23 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       mentions: {
         include: { user: { select: { id: true, username: true } } },
       },
+      likes: currentUserId
+        ? {
+            where: { userId: currentUserId },
+            select: { id: true },
+          }
+        : false,
+      bookmarks: currentUserId
+        ? {
+            where: { userId: currentUserId },
+            select: { id: true },
+          }
+        : false,
     },
   });
+
   if (!post) return null;
+
   return {
     id: post.id,
     caption: post.caption,
@@ -114,6 +128,8 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     bookmarkCount: post.bookmarkCount,
     user: post.user,
     isOwner: currentUserId ? post.user.id === currentUserId : false,
+    isLiked: currentUserId ? post.likes.length > 0 : false, 
+    isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
     mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
   };
 }
@@ -147,6 +163,18 @@ export async function getUserPosts(
           mentions: {
             include: { user: { select: { id: true, username: true } } },
           },
+          likes: currentUserId
+            ? {
+                where: { userId: currentUserId },
+                select: { id: true },
+              }
+            : false,
+          bookmarks: currentUserId
+            ? {
+                where: { userId: currentUserId },
+                select: { id: true },
+              }
+            : false,
         },
       },
     },
@@ -177,6 +205,8 @@ export async function getUserPosts(
         avatar: user.avatar,
       },
       isOwner: currentUserId ? user.id === currentUserId : false,
+      isLiked: currentUserId ? post.likes.length > 0 : false, 
+      isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
       mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
     })),
   };
