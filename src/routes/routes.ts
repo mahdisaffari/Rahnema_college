@@ -17,9 +17,10 @@ import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCo
 import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments } from "../utils/validators";
 import { getHomepageHandler } from "../modules/user/homepage/homepage.controller";
 import { validateHomepageMiddleware } from "../modules/user/homepage/homepage.middleware";
+import { SearchByPostController } from "../modules/user/search/by_post/searchByPost.controller";
 
 const router = Router();
-//const searchByPostController = new SearchByPostController();
+const searchByPostController = new SearchByPostController();
 
 // مسیرهای احراز هویت
 router.post("/register", register);
@@ -59,8 +60,9 @@ router.get("/users/followings", auth, getFollowingsHandler);
 
 // مسیر هوم‌پیج
 router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
+router.get("/search/posts", auth, searchByPostController.getPostsByHashtag.bind(searchByPostController));
 
 
-//router.get("/search/posts", auth, searchByPostController.getPostsByHashtag.bind(searchByPostController));
+// مسیر های سرچ
 
 export default router;
