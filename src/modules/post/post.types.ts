@@ -34,7 +34,7 @@ export interface PostResponse {
   };
   isOwner?: boolean;
   isLiked?: boolean; 
-  isBookmarked?: boolean; 
+  isBookmarked?: boolean;
   mentions?: { userId: string; username: string }[];
   hashtags?: string[];
 }
@@ -48,14 +48,9 @@ export interface PostApiResponse {
 export interface CreatePostResponse {
   success: boolean;
   message: string;
-  data?: {
-    id: string;
-    caption: string | null;
-    images: PostImageDTO[];
-    createdAt: string;
-    mentions?: { userId: string; username: string }[];
-  };
+  data?: PostDTO;
 }
+
 export interface ValidateAllResponse {
   success: boolean;
   message: string;

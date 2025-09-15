@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 
 const BUCKET_NAME = process.env.MINIO_BUCKET_NAME || "rahnama";
 
-// baraye har tasviri ke karbar uopload mikone
 export async function uploadBufferToMinIO(
   buffer: Buffer,
   filename: string,
@@ -23,7 +22,6 @@ export async function uploadBufferToMinIO(
   }
 }
 
-// sakht post 
 export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
@@ -35,6 +33,8 @@ export async function createPostWithImages(
   const uploadedUrls: string[] = await Promise.all(
     images.map((file) => uploadBufferToMinIO(file.buffer, file.originalname, 'posts'))
   );
+
+  const hashtags = caption ? extractHashtags(caption) : [];
 
   const created = await prisma.post.create({
     data: {
@@ -95,10 +95,11 @@ export async function createPostWithImages(
     commentCount: created.commentCount || 0,
     user: created.user,
     isOwner: true,
-    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })), 
+    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
+    hashtags: created.hashtags.map((h: { hashtag: { name: string } }) => h.hashtag.name),
   };
 }
-// baraye user jari ya login shode
+
 export async function getPostById(postId: string, currentUserId?: string): Promise<PostResponse | null> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -109,7 +110,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       createdAt: true,
       likeCount: true,
       bookmarkCount: true,
-      commentCount: true, 
+      commentCount: true,
       user: {
         select: {
           id: true,
@@ -121,6 +122,9 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       },
       mentions: {
         include: { user: { select: { id: true, username: true } } },
+      },
+      hashtags: {
+        include: { hashtag: { select: { name: true } } },
       },
       likes: currentUserId
         ? {
@@ -136,9 +140,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
         : false,
     },
   });
-
   if (!post) return null;
-
   return {
     id: post.id,
     caption: post.caption,
@@ -146,17 +148,16 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     createdAt: post.createdAt.toISOString(),
     likeCount: post.likeCount,
     bookmarkCount: post.bookmarkCount,
-    commentCount: post.commentCount, 
+    commentCount: post.commentCount,
     user: post.user,
     isOwner: currentUserId ? post.user.id === currentUserId : false,
-    isLiked: currentUserId ? post.likes.length > 0 : false, 
-    isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
+    isLiked: currentUserId ? post.likes.length > 0 : false,
+    isBookmarked: currentUserId ? post.bookmarks.length > 0 : false,
     mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
-    hashtags: post.hashtags.map((h) => h.hashtag.name), 
+    hashtags: post.hashtags.map((h: { hashtag: { name: string } }) => h.hashtag.name),
   };
 }
 
-// namayesh tak post user dige na on acc ke login shode
 export async function getUserPosts(
   username: string,
   currentUserId?: string,
@@ -182,9 +183,12 @@ export async function getUserPosts(
           createdAt: true,
           likeCount: true,
           bookmarkCount: true,
-          commentCount: true, 
+          commentCount: true,
           mentions: {
             include: { user: { select: { id: true, username: true } } },
+          },
+          hashtags: {
+            include: { hashtag: { select: { name: true } } },
           },
           likes: currentUserId
             ? {
@@ -220,7 +224,7 @@ export async function getUserPosts(
       createdAt: post.createdAt.toISOString(),
       likeCount: post.likeCount,
       bookmarkCount: post.bookmarkCount,
-      commentCount: post.commentCount, 
+      commentCount: post.commentCount,
       user: {
         id: user.id,
         username: user.username,
@@ -229,10 +233,10 @@ export async function getUserPosts(
         avatar: user.avatar,
       },
       isOwner: currentUserId ? user.id === currentUserId : false,
-      isLiked: currentUserId ? post.likes.length > 0 : false, 
-      isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
+      isLiked: currentUserId ? post.likes.length > 0 : false,
+      isBookmarked: currentUserId ? post.bookmarks.length > 0 : false,
       mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
-      hashtags: post.hashtags.map((h) => h.hashtag.name), 
+      hashtags: post.hashtags.map((h: { hashtag: { name: string } }) => h.hashtag.name),
     })),
   };
 }
