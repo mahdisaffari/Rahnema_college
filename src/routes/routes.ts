@@ -18,6 +18,9 @@ import { validateCreateComment, validateCreateReply, validateCommentId, validate
 import { getHomepageHandler } from "../modules/user/homepage/homepage.controller";
 import { validateHomepageMiddleware } from "../modules/user/homepage/homepage.middleware";
 import { SearchByPostController } from "../modules/user/search/by_post/searchByPost.controller";
+import { validateBookmarkedPostsMiddleware } from "../modules/user/Bookmarked_Post/bookmarkedPost.meddleware";
+import { getUserBookmarkedPostsHandler } from "../modules/user/Bookmarked_Post/bookmarkedPost.controller";
+import { getUserMentionedPostsHandler } from "../modules/user/Mentioned_Post/mentionedPost.controller";
 
 const router = Router();
 const searchByPostController = new SearchByPostController();
@@ -57,6 +60,10 @@ router.post("/users/:username/follow", auth, validateUsernameMiddleware, followU
 // مسیرهای فالوورها و فالویینگ‌ها
 router.get("/users/followers", auth, getFollowersHandler);
 router.get("/users/followings", auth, getFollowingsHandler);
+
+// مسیر بوکمارک‌ها و منشن‌ها
+router.get("/bookmarks", auth, validateBookmarkedPostsMiddleware, getUserBookmarkedPostsHandler);
+router.get("/mentions", auth, validateGetUserPostsMiddleware, getUserMentionedPostsHandler);
 
 // مسیر هوم‌پیج
 router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
