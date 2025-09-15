@@ -5,5 +5,6 @@ export interface LikeResponse {
     postId: string;
     userId: string;
     likeCount: number;
+    liked: boolean;
   };
 }
