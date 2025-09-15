@@ -3,14 +3,69 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// GET /search/posts
+export const SearchPostsSchema = z.object({
+  q: z
+    .string()
+    .min(1, "هشتگ الزامی است")
+    .regex(/^#[\w+#]+/, "هشتگ‌ها باید با # شروع شوند و معتبر باشند"), // پشتیبانی از #fun+#travel
+  page: z.coerce.number().int().min(1, "صفحه باید حداقل ۱ باشد").default(1),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1, "حد باید حداقل ۱ باشد")
+    .max(10, "حد حداکثر ۱۰ است")
+    .default(6),
+});
+
+export async function validateSearchPosts(data: {
+  q: string;
+  page: number;
+  limit: number;
+}): Promise<{
+  q?: string | null;
+  page?: string | null;
+  limit?: string | null;
+}> {
+  try {
+    SearchPostsSchema.parse(data);
+    const hashtags = extractHashtags(data.q); // استفاده از تابع موجود
+    if (!hashtags.length) {
+      return { q: "هشتگ معتبر نیست" };
+    }
+    return { q: null, page: null, limit: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce(
+        (acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }),
+        {}
+      );
+    }
+    return { q: "خطا در اعتبارسنجی جستجو" };
+  }
+}
 
 export const CreatePostSchema = z.object({
   caption: z.string().max(300, "کپشن باید حداکثر ۳۰۰ کاراکتر باشد").optional(),
-  images: z.array(z.object({
-    mimetype: z.string().refine(val => val.startsWith("image/"), { message: "فقط تصویر مجاز است" }),
-    size: z.number().max(5 * 1024 * 1024, "حجم تصویر باید کمتر از ۵ مگابایت باشد")
-  })).max(5, "حداکثر ۵ تصویر").min(1, "حداقل یک تصویر الزامی است"),
-  mentions: z.array(z.string().min(1, "نام کاربری الزامی است")).optional().default([]) // اختیاری
+
+  images: z
+    .array(
+      z.object({
+        mimetype: z.string().refine((val) => val.startsWith("image/"), {
+          message: "فقط تصویر مجاز است",
+        }),
+        size: z
+          .number()
+          .max(5 * 1024 * 1024, "حجم تصویر باید کمتر از ۵ مگابایت باشد"),
+      })
+    )
+    .max(5, "حداکثر ۵ تصویر")
+    .min(1, "حداقل یک تصویر الزامی است"),
+
+  mentions: z
+    .array(z.string().min(1, "نام کاربری الزامی است"))
+    .optional()
+    .default([]),
 });
 
 export function extractMentions(caption: string): string[] {
