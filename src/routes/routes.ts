@@ -13,8 +13,17 @@ import { getPostProfileHandler } from "../modules/user/postProfile/postProfile.c
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
 import { getFollowersHandler, getFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
+import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCommentsHandler } from "../modules/post/comment/comment.controller";
+import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments } from "../utils/validators";
+import { getHomepageHandler } from "../modules/user/homepage/homepage.controller";
+import { validateHomepageMiddleware } from "../modules/user/homepage/homepage.middleware";
+import { SearchByPostController } from "../modules/user/search/by_post/searchByPost.controller";
+import { validateBookmarkedPostsMiddleware } from "../modules/user/Bookmarked_Post/bookmarkedPost.meddleware";
+import { getUserBookmarkedPostsHandler } from "../modules/user/Bookmarked_Post/bookmarkedPost.controller";
+import { getUserMentionedPostsHandler } from "../modules/user/Mentioned_Post/mentionedPost.controller";
 
 const router = Router();
+const searchByPostController = new SearchByPostController();
 
 // مسیرهای احراز هویت
 router.post("/register", register);
@@ -32,11 +41,14 @@ router.get("/users/:username", auth, validateUsernameMiddleware, getUserHandler)
 // مسیرهای پست
 router.post("/posts", auth, upload.array("images", 5), validateAllMiddleware, createSetupPostHandler);
 router.get("/posts/:id", auth, getPostHandler);
-// ادیت پست
-router.put("/posts/:id", auth, upload.array("images", 5), validateEditPostMiddleware, editPostHandler); 
+router.put("/posts/:id", auth, upload.array("images", 5), validateEditPostMiddleware, editPostHandler);
 router.get("/users/:username/posts", auth, validateGetUserPostsMiddleware, getUserPostsHandler); 
 router.post("/posts/:id/bookmark", auth, bookmarkPostHandler);
 router.post("/posts/:id/like", auth, likePostHandler);
+router.post("/posts/:id/comments", auth, validateCreateComment, createCommentHandler);
+router.post("/posts/:id/comments/:commentId/reply", auth, validateCreateReply, createReplyHandler);
+router.post("/posts/:id/comments/:commentId/like", auth, validateCommentId, likeCommentHandler);
+router.get("/posts/:id/comments", auth, validateGetPostComments, getPostCommentsHandler);
 //router.delete("/posts/:id/bookmark", auth, bookmarkPostHandler);
 //router.delete("/posts/:id/like", auth, likePostHandler);
 //router.get("/posts/:id/likes", auth, getPostLikesCountHandler);
@@ -48,5 +60,16 @@ router.post("/users/:username/follow", auth, validateUsernameMiddleware, followU
 // مسیرهای فالوورها و فالویینگ‌ها
 router.get("/users/followers", auth, getFollowersHandler);
 router.get("/users/followings", auth, getFollowingsHandler);
+
+// مسیر بوکمارک‌ها و منشن‌ها
+router.get("/bookmarks", auth, validateBookmarkedPostsMiddleware, getUserBookmarkedPostsHandler);
+router.get("/mentions", auth, validateGetUserPostsMiddleware, getUserMentionedPostsHandler);
+
+// مسیر هوم‌پیج
+router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
+router.get("/search/posts", auth, searchByPostController.getPostsByHashtag.bind(searchByPostController));
+
+
+// مسیر های سرچ
 
 export default router;

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { minioClient } from '../../config/minio.config';
 import { PostResponse, UserPostsResponse } from './post.types';
+import { extractHashtags } from '../../utils/validators';
 
 const prisma = new PrismaClient();
 
@@ -22,12 +23,12 @@ export async function uploadBufferToMinIO(
   }
 }
 
-//sakht post 
+// sakht post 
 export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
   images: Express.Multer.File[],
-  mentions: string[] | undefined 
+  mentions: string[] | undefined
 ): Promise<PostResponse> {
   if (!images || images.length === 0) throw new Error('No images provided');
 
@@ -43,7 +44,12 @@ export async function createPostWithImages(
         create: uploadedUrls.map((url) => ({ url })),
       },
     },
-    include: { images: true, user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } } },
+    include: {
+      images: true,
+      user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
+      mentions: { include: { user: { select: { id: true, username: true } } } },
+      hashtags: { include: { hashtag: { select: { name: true } } } },
+    },
   });
 
   await prisma.user.update({
@@ -61,6 +67,19 @@ export async function createPostWithImages(
     });
   }
 
+  if (hashtags.length > 0) {
+    const hashtagRecords = await prisma.hashtag.findMany({
+      where: { name: { in: hashtags } },
+      select: { id: true, name: true },
+    });
+    await prisma.postHashtag.createMany({
+      data: hashtags.map((hashtag) => ({
+        postId: created.id,
+        hashtagId: hashtagRecords.find((h) => h.name === hashtag)!.id,
+      })),
+    });
+  }
+
   const mentionUsers = await prisma.mention.findMany({
     where: { postId: created.id },
     include: { user: { select: { id: true, username: true } } },
@@ -73,12 +92,12 @@ export async function createPostWithImages(
     createdAt: created.createdAt.toISOString(),
     likeCount: created.likeCount || 0,
     bookmarkCount: created.bookmarkCount || 0,
+    commentCount: created.commentCount || 0,
     user: created.user,
     isOwner: true,
     mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })), 
   };
 }
-
 // baraye user jari ya login shode
 export async function getPostById(postId: string, currentUserId?: string): Promise<PostResponse | null> {
   const post = await prisma.post.findUnique({
@@ -90,6 +109,7 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       createdAt: true,
       likeCount: true,
       bookmarkCount: true,
+      commentCount: true, 
       user: {
         select: {
           id: true,
@@ -126,11 +146,13 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
     createdAt: post.createdAt.toISOString(),
     likeCount: post.likeCount,
     bookmarkCount: post.bookmarkCount,
+    commentCount: post.commentCount, 
     user: post.user,
     isOwner: currentUserId ? post.user.id === currentUserId : false,
     isLiked: currentUserId ? post.likes.length > 0 : false, 
     isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
     mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
+    hashtags: post.hashtags.map((h) => h.hashtag.name), 
   };
 }
 
@@ -160,6 +182,7 @@ export async function getUserPosts(
           createdAt: true,
           likeCount: true,
           bookmarkCount: true,
+          commentCount: true, 
           mentions: {
             include: { user: { select: { id: true, username: true } } },
           },
@@ -197,6 +220,7 @@ export async function getUserPosts(
       createdAt: post.createdAt.toISOString(),
       likeCount: post.likeCount,
       bookmarkCount: post.bookmarkCount,
+      commentCount: post.commentCount, 
       user: {
         id: user.id,
         username: user.username,
@@ -208,6 +232,7 @@ export async function getUserPosts(
       isLiked: currentUserId ? post.likes.length > 0 : false, 
       isBookmarked: currentUserId ? post.bookmarks.length > 0 : false, 
       mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
+      hashtags: post.hashtags.map((h) => h.hashtag.name), 
     })),
   };
 }
