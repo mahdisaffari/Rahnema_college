@@ -12,7 +12,7 @@ export async function bookmarkPostHandler(req: AuthRequest, res: Response<Bookma
     const postId = req.params.id;
     const userId = req.user!.id;
     const isBookmarked = await toggleBookmark(postId, userId);
-    const action = isBookmarked ? 'بوکمارک شد' : 'انبوکمارک شد';
+    const action = isBookmarked ? 'بوکمارک شد' : 'آنبوکمارک شد';
     const post = await prisma.post.findUnique({
       where: { id: postId },
       select: { bookmarkCount: true },
@@ -20,7 +20,7 @@ export async function bookmarkPostHandler(req: AuthRequest, res: Response<Bookma
     return res.json({
       success: true,
       message: `پست با موفقیت ${action}`,
-      data: { postId, userId, bookmarkCount: post?.bookmarkCount || 0 },
+      data: { postId, userId, bookmarkCount: post?.bookmarkCount || 0, bookmarked: isBookmarked },
     });
   } catch (error) {
     return handleError(error, res, 'خطا در مدیریت بوکمارک');

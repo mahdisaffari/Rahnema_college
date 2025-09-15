@@ -20,7 +20,7 @@ export async function likePostHandler(req: AuthRequest, res: Response<LikeRespon
     return res.json({
       success: true,
       message: `پست با موفقیت ${action}`,
-      data: { postId, userId, likeCount: post?.likeCount || 0 },
+      data: { postId, userId, likeCount: post?.likeCount || 0, liked: isLiked },
     });
   } catch (error) {
     return handleError(error, res, 'خطا در مدیریت لایک');
@@ -31,7 +31,7 @@ export async function getPostLikesCountHandler(req: Request, res: Response<LikeR
   try {
     const postId = req.params.id;
     if (!postId)
-      return res.status(400).json({ success: false, message: 'شناسه پست نامعتبر است' });
+      return res.json({ success: false, message: 'شناسه پست نامعتبر است' });
 
     const count = await getLikesCount(postId);
     return res.json({
@@ -40,7 +40,8 @@ export async function getPostLikesCountHandler(req: Request, res: Response<LikeR
       data: {
         likeCount: count,
         postId: '',
-        userId: ''
+        userId: '',
+        liked: false, 
       },
     });
   } catch (error) {
