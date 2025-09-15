@@ -1,21 +1,12 @@
 // post.validator.ts
 import { z } from "zod";
-import { CreatePostSchema, extractHashtags, validateHashtags, validateMentions } from "../../utils/validators";
+import { CreatePostSchema, validateMentions } from "../../utils/validators";
 
-export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[]; mentions?: string[] }): Promise<{
-  images?: string | null;
-  caption?: string | null;
-  mentions?: string | null;
-  hashtags?: string | null;
-}> => {
-  const errors = {
-    images: validateImages({ images: data.images }),
-    caption: validateCaption({ caption: data.caption }),
-    mentions: data.mentions && data.mentions.length > 0 ? await validateMentions(data.mentions) : null, 
-    hashtags: await validateHashtags(extractHashtags(data.caption || "")), 
-  };
-  return errors;
-};
+export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[]; mentions?: string[] }) => ({
+  images: validateImages({ images: data.images }),
+  caption: validateCaption({ caption: data.caption }),
+  mentions: await validateMentions(data.mentions || []), 
+});
 
 function validateImages(data: { images?: Express.Multer.File[] }): string | null {
   try {

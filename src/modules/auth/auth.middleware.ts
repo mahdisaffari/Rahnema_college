@@ -11,8 +11,6 @@ import { AuthUser } from "./auth.types";
  * bayad khode dasti tokeno decode koni
  */
 
-
-
 export interface AuthRequest extends Request {
   user?: AuthUser;
 }
@@ -21,13 +19,17 @@ const ACCESS_COOKIE_NAME = "access_token";
 
 export function auth(req: Request, res: Response, next: NextFunction) {
   const token = req.cookies?.[ACCESS_COOKIE_NAME] as string | undefined;
-  if (!token) return res.status(401).json({ message: "هدر مجوز وجود ندارد" });
+  if (!token) {
+    (req as AuthRequest).user = undefined;
+    return next();
+  }
 
   try {
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as { sub: string; username: string; email: string };
     (req as AuthRequest).user = { id: decoded.sub, username: decoded.username, email: decoded.email };
     next();
-  } catch {
-    return res.status(401).json({ message: "توکن نامعتبر یا منقضی شده" });
+  } catch (error) {
+    (req as AuthRequest).user = undefined;
+    next();
   }
 }

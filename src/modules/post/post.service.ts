@@ -36,8 +36,6 @@ export async function createPostWithImages(
     images.map((file) => uploadBufferToMinIO(file.buffer, file.originalname, 'posts'))
   );
 
-  const hashtags = caption ? extractHashtags(caption) : [];
-
   const created = await prisma.post.create({
     data: {
       caption: caption ?? null,
@@ -97,8 +95,7 @@ export async function createPostWithImages(
     commentCount: created.commentCount || 0,
     user: created.user,
     isOwner: true,
-    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
-    hashtags: created.hashtags.map((h) => h.hashtag.name),
+    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })), 
   };
 }
 // baraye user jari ya login shode
@@ -125,9 +122,6 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
       mentions: {
         include: { user: { select: { id: true, username: true } } },
       },
-      hashtags: {
-        include: { hashtag: { select: { name: true } } },
-      },
       likes: currentUserId
         ? {
             where: { userId: currentUserId },
@@ -142,7 +136,9 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
         : false,
     },
   });
+
   if (!post) return null;
+
   return {
     id: post.id,
     caption: post.caption,
@@ -189,9 +185,6 @@ export async function getUserPosts(
           commentCount: true, 
           mentions: {
             include: { user: { select: { id: true, username: true } } },
-          },
-          hashtags: {
-            include: { hashtag: { select: { name: true } } },
           },
           likes: currentUserId
             ? {

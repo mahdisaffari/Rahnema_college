@@ -11,7 +11,7 @@ export async function createSetupPostHandler(req: AuthRequest, res: Response<Cre
     const { caption, mentions } = req.body as CreatePostRequest;
     const images = (req.files as Express.Multer.File[]) || [];
 
-    const post = await createPostWithImages(userId, caption, images, mentions);
+    const post = await createPostWithImages(userId, caption, images, mentions || []);
     return res.status(201).json({
       success: true,
       message: 'پست با موفقیت ایجاد شد',

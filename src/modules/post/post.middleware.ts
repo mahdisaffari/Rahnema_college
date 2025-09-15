@@ -5,33 +5,29 @@ import { AuthRequest } from '../auth/auth.middleware';
 import { validateGetUserPosts } from '../../utils/validators';
 
 export async function validateAllMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
-  const { caption, mentions }: { caption?: string; mentions?: string | string[] } = req.body; // تایپ‌دهی صریح
-  const images = (req.files as Express.Multer.File[] | undefined) ?? undefined;
+  let { caption, mentions } = req.body;
+  const images = req.files as Express.Multer.File[] | undefined;
 
-  let cleanedMentions: string[] = [];
-  if (mentions) {
-    if (typeof mentions === 'string') {
-      try {
-        const parsedMentions = JSON.parse(mentions);
-        cleanedMentions = Array.isArray(parsedMentions) ? parsedMentions : [parsedMentions];
-      } catch (error) {
-        return res.status(400).json({
-          success: false,
-          message: 'خطا در پارسینگ منشن‌ها',
-          data: { mentions: 'فرمت منشن‌ها باید آرایه JSON معتبر باشد' },
-        });
-      }
-    } else if (Array.isArray(mentions)) {
-      cleanedMentions = mentions;
+ 
+  if (mentions && typeof mentions === 'string') {
+    try {
+      mentions = JSON.parse(mentions); 
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'خطا در پارسینگ منشن‌ها',
+        data: { mentions: 'فرمت منشن‌ها باید آرایه JSON معتبر باشد' },
+      });
     }
-    cleanedMentions = cleanedMentions.map(m => m.replace('@', '')); 
   }
 
-  const errors = await validateAll({ caption, images, mentions: cleanedMentions });
-  if (errors.images || errors.caption || errors.mentions || errors.hashtags) {
+  const errors = await validateAll({ caption, images, mentions: mentions || [] });
+  if (errors.images || errors.caption || errors.mentions) {
     return res.status(400).json({ success: false, message: 'خطا در اعتبارسنجی', data: errors });
   }
-  req.body.mentions = cleanedMentions; 
+
+ 
+  req.body.mentions = mentions || [];
   next();
 }
 

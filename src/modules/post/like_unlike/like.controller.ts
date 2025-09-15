@@ -42,7 +42,7 @@ export async function getPostLikesCountHandler(req: Request, res: Response<LikeR
         postId: '',
         userId: '',
         liked: false, 
-      }, 
+      },
     });
   } catch (error) {
     return handleError(error, res, 'خطا در دریافت تعداد لایک‌ها');
