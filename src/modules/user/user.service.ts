@@ -6,11 +6,10 @@ import { cloudinary } from '../../config/cloudinary.config';
 
 const prisma = new PrismaClient();
 
-// ye user migire profile ro mide bedone pass
-export async function getProfile(userId: string, currentUserId: string): Promise<ProfileResponse | null> {
-  const user = await prisma.user.findUnique({ // faghad ye karbar ba in id bar migarde
+export async function getProfile(userId: string): Promise<ProfileResponse | null> {
+  const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: {// fild haro moshakhas mikonim
+    select: {
       id: true,
       username: true,
       email: true,
@@ -26,17 +25,7 @@ export async function getProfile(userId: string, currentUserId: string): Promise
 
   if (!user) return null;
 
-  // Check if the current user follows this user
-  let isFollowed = false;
-  if (currentUserId && userId !== currentUserId) { // Only check if different users
-    const followRecord = await prisma.follow.findUnique({
-      where: { followerId_followingId: { followerId: currentUserId, followingId: userId } },
-    });
-    console.log('Follow check:', { currentUserId, followingId: userId, followRecord }); // Debug log
-    isFollowed = !!followRecord;
-  }
-
-  return { ...user, isFollowedByMe: isFollowed };
+  return { ...user, isFollowedByMe: false }; // برای کاربر جاری، همیشه false
 }
 
 export async function getUserByUsername(username: string, currentUserId: string): Promise<UserResponse | null> {
@@ -52,31 +41,34 @@ export async function getUserByUsername(username: string, currentUserId: string)
       postCount: true,
       followerCount: true,
       followingCount: true,
+      following: currentUserId ? {
+        select: { followerId: true },
+        where: { followerId: currentUserId },
+      } : undefined,
+      followers: currentUserId ? {
+        select: { followingId: true },
+        where: { followingId: currentUserId },
+      } : undefined,
     },
   });
 
   if (!user) return null;
 
-  // Check if the current user follows this user
-  let isFollowed = false;
-  if (currentUserId && user.id !== currentUserId) { // Only check if different users
-    const followRecord = await prisma.follow.findUnique({
-      where: { followerId_followingId: { followerId: currentUserId, followingId: user.id } },
-    });
-    console.log('Follow check:', { currentUserId, followingId: user.id, followRecord }); // Debug log
-    isFollowed = !!followRecord;
-  }
-
-  return { ...user, isFollowedByMe: isFollowed };
+  return {
+    ...user,
+    isFollowedByMe: currentUserId && user.id !== currentUserId ? user.following.length > 0 : false,
+    isFollowingMe: currentUserId && user.id !== currentUserId ? user.followers.length > 0 : false,
+  };
 }
 
+// ... بقیه توابع (بدون تغییر)
 export async function uploadAvatar(
-  userId: string, // user id ro migire 
-  file: Express.Multer.File // ye file ax migire
+  userId: string,
+  file: Express.Multer.File
 ): Promise<string> {
   if (!file.buffer || file.buffer.length === 0) throw new Error('Empty file');
   return new Promise((resolve, reject) => {
-    cloudinary.uploader // ax ro upload mikonim
+    cloudinary.uploader
       .upload_stream(
         { public_id: `${userId}-${Date.now()}`, folder: 'avatars' },
         (error, result) =>
@@ -86,13 +78,12 @@ export async function uploadAvatar(
   });
 }
 
-//public id ro az yrl avatar mikeshan biron
 function extractPublicIdFromUrl(url: string): string {
   const parts = url.split('/');
   const filename = parts[parts.length - 1].split('.')[0];
   return `avatars/${filename}`;
 }
-//hazfe avatar az Cloudinary
+
 async function deleteAvatarFromCloudinary(publicId: string): Promise<void> {
   await new Promise((resolve, reject) => {
     cloudinary.uploader.destroy(publicId, (error, result) => {
@@ -113,28 +104,23 @@ export async function updateProfile(
     password?: string;
   }
 ): Promise<ProfileResponse> {
-    // ye obj misazm barye negah dari taghirat
   const updateData: Partial<ProfileResponse & { passwordHash?: string }> = {};
 
   if (data.firstname !== undefined) updateData.firstname = data.firstname;
   if (data.lastname !== undefined) updateData.lastname = data.lastname;
   if (data.bio !== undefined) updateData.bio = data.bio;
-  //agar email sakht
   if (data.email) {
     const normalizedEmail = normEmail(data.email);
-    console.log("Checking email:", normalizedEmail, "for userId:", userId); 
+    console.log("Checking email:", normalizedEmail, "for userId:", userId);
     const existingUser = await prisma.user.findFirst({ where: { email: normalizedEmail, NOT: { id: userId } } });
-    console.log("Found user:", existingUser); 
+    console.log("Found user:", existingUser);
     if (existingUser) throw new Error('ایمیل تکراری است');
-    updateData.email = normalizedEmail;  // ok bod update kon
+    updateData.email = normalizedEmail;
   }
-  // agar pass jadid dad
   if (data.password)
-    // hash mishe
     updateData.passwordHash = await bcrypt.hash(data.password, 10);
   if (data.avatar !== undefined) {
     if (data.avatar === null) {
-     //hazfe avatar ghabli az Cloudinary
       const currentUser = await prisma.user.findUnique({
         where: { id: userId },
         select: { avatar: true },
@@ -148,7 +134,7 @@ export async function updateProfile(
       updateData.avatar = await uploadAvatar(userId, data.avatar);
     }
   }
-  // zakhire taghirat dar db
+
   return prisma.user.update({
     where: { id: userId },
     data: updateData,

@@ -21,6 +21,7 @@ import { SearchByPostController } from "../modules/user/search/by_post/searchByP
 import { validateBookmarkedPostsMiddleware } from "../modules/user/Bookmarked_Post/bookmarkedPost.meddleware";
 import { getUserBookmarkedPostsHandler } from "../modules/user/Bookmarked_Post/bookmarkedPost.controller";
 import { getUserMentionedPostsHandler } from "../modules/user/Mentioned_Post/mentionedPost.controller";
+import { searchByUsernameController } from "../modules/user/search/by_username/searchByUsername.controller";
 
 const router = Router();
 const searchByPostController = new SearchByPostController();
@@ -67,9 +68,12 @@ router.get("/mentions", auth, validateGetUserPostsMiddleware, getUserMentionedPo
 
 // مسیر هوم‌پیج
 router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
+
+// مسیر های سرچ
+router.get("/search/users", auth, searchByUsernameController);
 router.get("/search/posts", auth, searchByPostController.getPostsByHashtag.bind(searchByPostController));
 
 
-// مسیر های سرچ
+
 
 export default router;

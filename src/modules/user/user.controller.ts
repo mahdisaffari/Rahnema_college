@@ -4,12 +4,10 @@ import { ProfileResponse, UserResponse, UserApiResponse, UserUpdateRequest } fro
 import { AuthRequest } from '../auth/auth.middleware';
 import { handleError } from '../../utils/errorHandler';
 
-// input haro be service midim
-
 export async function getProfileHandler(req: AuthRequest, res: Response<UserApiResponse<ProfileResponse>>) {
   try {
     if (!req.user?.id) throw new Error('کاربر احراز هویت نشده است');
-    const user = await getProfile(req.user!.id, req.user!.id);
+    const user = await getProfile(req.user!.id); 
     if (!user) return res.status(404).json({ success: false, message: 'کاربر یافت نشد' });
     return res.json({ success: true, message: 'پروفایل با موفقیت دریافت شد', data: user });
   } catch (error) {
@@ -17,10 +15,10 @@ export async function getProfileHandler(req: AuthRequest, res: Response<UserApiR
   }
 }
 
-export async function getUserHandler(req: Request, res: Response<UserApiResponse<UserResponse>>) {
+export async function getUserHandler(req: AuthRequest, res: Response<UserApiResponse<UserResponse>>) {
   try {
     const username = req.params.username;
-    const currentUserId = (req as AuthRequest).user?.id || '';
+    const currentUserId = req.user?.id || ''; 
     const user = await getUserByUsername(username, currentUserId);
     if (!user) return res.status(404).json({ success: false, message: 'کاربر یافت نشد' });
     return res.json({ success: true, message: 'اطلاعات کاربر با موفقیت دریافت شد', data: user });
@@ -29,7 +27,6 @@ export async function getUserHandler(req: Request, res: Response<UserApiResponse
   }
 }
 
-//inja dade haye jadid ro migirim midim be sevice 
 export async function updateProfileHandler(req: AuthRequest, res: Response<UserApiResponse<ProfileResponse>>) {
   try {
     const userId = req.user!.id;

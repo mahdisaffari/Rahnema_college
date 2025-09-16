@@ -23,6 +23,7 @@ export interface UserResponse {
   followerCount: number;
   followingCount: number;
   isFollowedByMe: boolean; // required for other users
+  isFollowingMe: boolean;
 }
 
 export interface UserUpdateRequest {
