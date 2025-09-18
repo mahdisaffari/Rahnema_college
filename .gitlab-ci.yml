@@ -67,14 +67,14 @@ deploy-to-server:
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           -p "${SSH_PORT_SERVER:-22}" \
           "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
-          "mkdir -p ${DEPLOY_PATH:-/var/www/codechefs-backend}"
+          "mkdir -p ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}"
 
     # Copy application files to server
     - |
       rsync -avz --delete \
           -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${SSH_PORT_SERVER:-22}" \
           . \
-          "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/var/www/codechefs-backend}/" \
+          "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/" \
           --exclude='.git' --exclude='node_modules' --exclude='.env'
     
     # Install dependencies and restart services
@@ -82,7 +82,7 @@ deploy-to-server:
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           -p "${SSH_PORT_SERVER:-22}" \
           "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
-          "cd ${DEPLOY_PATH:-/var/www/codechefs-backend} && \
+          "cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend} && \
            npm ci && \
            pm2 restart codechefs-backend || pm2 start src/index.js --name codechefs-backend"
     
