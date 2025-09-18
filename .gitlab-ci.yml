@@ -10,82 +10,28 @@ deploy-to-server:
     - set -euo pipefail
     - apk add --no-cache openssh-client rsync
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    # Validate required environment variables first
-    - |
-      if [ -z "${SSH_HOST_SERVER:-}" ] || [ -z "${SSH_USER_SERVER:-}" ] || [ -z "${SSH_PRIVATE_KEY_SERVER:-}" ]; then
-        echo "❌ Error: Required SSH environment variables are not set"
-        echo "Please set the following variables in GitLab CI/CD settings:"
-        echo "  - SSH_HOST_SERVER (your server IP: 188.121.116.152)"
-        echo "  - SSH_USER_SERVER (your SSH username: ubuntu)"
-        echo "  - SSH_PRIVATE_KEY_SERVER (your private SSH key content)"
-        echo ""
-        echo "To set these variables:"
-        echo "1. Go to your GitLab project"
-        echo "2. Settings → CI/CD → Variables"
-        echo "3. Add each variable with the appropriate value"
-        exit 1
-      fi
-    # Create SSH key file with proper formatting
-    - |
-      echo "$SSH_PRIVATE_KEY_SERVER" | base64 -d > ~/.ssh/id_rsa
-      chmod 600 ~/.ssh/id_rsa
-      # Verify the key file was created properly
-      if [ ! -f ~/.ssh/id_rsa ]; then
-        echo "❌ Error: SSH key file was not created"
-        exit 1
-      fi
-      # Check if the key file has content
-      if [ ! -s ~/.ssh/id_rsa ]; then
-        echo "❌ Error: SSH key file is empty"
-        exit 1
-      fi
-      echo "✅ SSH key file created successfully"
-    # Add server to known_hosts
+    - echo "$SSH_PRIVATE_KEY_SERVER" | base64 -d > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
     - ssh-keyscan -T 5 -p "${SSH_PORT_SERVER:-22}" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
-    # Test SSH key format
-    - |
-      echo "🔍 Testing SSH key format..."
-      if ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null 2>&1; then
-        echo "✅ SSH private key format is valid"
-      else
-        echo "❌ Error: SSH private key format is invalid"
-        echo "Please ensure your private key is in OpenSSH format"
-        exit 1
-      fi
 
   script:
-    
-    # Test SSH connection
+    # Test SSH connection, create deploy dir, copy files, install deps, restart service
     - |
-      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -o ConnectTimeout=10 \
-          -p "${SSH_PORT_SERVER:-22}" \
-          "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
-          "echo 'SSH connection successful'"
-    
-    # Create deployment directory on server
-    - |
-      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          -p "${SSH_PORT_SERVER:-22}" \
-          "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
-          "mkdir -p ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}"
-
-    # Copy application files to server
-    - |
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
+        "$SSH_USER_SERVER@$SSH_HOST_SERVER" "mkdir -p ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}"
+      
       rsync -avz --delete \
-          -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${SSH_PORT_SERVER:-22}" \
-          . \
-          "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/" \
-          --exclude='.git' --exclude='node_modules' --exclude='.env'
-    
-    # Install dependencies and restart services
-    - |
-      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          -p "${SSH_PORT_SERVER:-22}" \
-          "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
-          "mkdir -p ~/.npm-global && npm install -g pm2 --prefix ~/.npm-global && \
-           export PATH=\$HOME/.npm-global/bin:\$PATH && \
-           cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend} && \
-           npm ci && pm2 restart codechefs-backend || pm2 start src/index.ts --name codechefs-backend" --interpreter node
-
-    # Clean up SSH key
+        -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${SSH_PORT_SERVER:-22}" \
+        . "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/" \
+        --exclude='.git' --exclude='node_modules' --exclude='.env'
+      
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
+        "$SSH_USER_SERVER@$SSH_HOST_SERVER" "
+          export PATH=\$HOME/.npm-global/bin:\$PATH
+          mkdir -p ~/.npm-global
+          npm install -g pm2 --prefix ~/.npm-global
+          cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}
+          npm ci
+          pm2 restart codechefs-backend || pm2 start src/index.ts --name codechefs-backend
+        "
     - rm -f ~/.ssh/id_rsa
