@@ -4,7 +4,22 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export const EditPostSchema = CreatePostSchema.partial().extend({
+export const EditPostSchema = z.object({
+  caption: CreatePostSchema.shape.caption.optional(),
+  images: z
+    .array(
+      z.object({
+        mimetype: z.string().refine((val) => val.startsWith("image/"), {
+          message: "فقط تصویر مجاز است",
+        }),
+        size: z
+          .number()
+          .max(5 * 1024 * 1024, "حجم تصویر باید کمتر از ۵ مگابایت باشد"),
+      })
+    )
+    .max(5, "حداکثر ۵ تصویر")
+    .optional(),
+  removeImageIds: z.array(z.string().uuid()).optional(),
   mentions: z.array(z.string()).optional(),
 });
 
