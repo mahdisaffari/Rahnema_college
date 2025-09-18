@@ -18,5 +18,5 @@ RUN npx prisma generate
 EXPOSE 3000
 
 # Use our entrypoint to wait → migrate → start
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
