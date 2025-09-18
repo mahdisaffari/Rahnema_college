@@ -27,7 +27,7 @@ deploy-to-server:
       fi
     # Create SSH key file with proper formatting
     - |
-      echo "$SSH_PRIVATE_KEY_SERVER" | tr -d '\r' > ~/.ssh/id_rsa
+      echo "$SSH_PRIVATE_KEY_SERVER" | base64 -d > ~/.ssh/id_rsa
       chmod 600 ~/.ssh/id_rsa
       # Verify the key file was created properly
       if [ ! -f ~/.ssh/id_rsa ]; then
@@ -68,7 +68,7 @@ deploy-to-server:
           -p "${SSH_PORT_SERVER:-22}" \
           "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
           "mkdir -p ${DEPLOY_PATH:-/var/www/codechefs-backend}"
-    
+
     # Copy application files to server
     - |
       rsync -avz --delete \
