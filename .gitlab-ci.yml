@@ -27,16 +27,6 @@ deploy-to-server:
         . "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/" \
         --exclude='.git' --exclude='node_modules' --exclude='.env'
       
-#      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
-#        "$SSH_USER_SERVER@$SSH_HOST_SERVER" "
-#          export PATH=\$HOME/.npm-global/bin:\$PATH
-#          mkdir -p ~/.npm-global
-#          npm install -g pm2 --prefix ~/.npm-global
-#          cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}
-#          npm ci
-#          pm2 restart codechefs-backend || pm2 start src/index.ts --name codechefs-backend
-#        "
-      
       # 3. Build Docker image and run container
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
         "$SSH_USER_SERVER@$SSH_HOST_SERVER" "
