@@ -1,0 +1,39 @@
+stages:
+  - deploy
+
+deploy-to-server:
+  stage: deploy
+  image: alpine:3.20
+  only:
+    - dev
+  before_script:
+    - set -euo pipefail
+    - apk add --no-cache openssh-client rsync
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY_SERVER" | base64 -d > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -T 5 -p "${SSH_PORT_SERVER:-22}" "$SSH_HOST_SERVER" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+  script:
+    # Test SSH connection, create deploy dir, copy files, install deps, restart service
+    - |
+      # 1. Create deploy directory on server
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
+        "$SSH_USER_SERVER@$SSH_HOST_SERVER" "mkdir -p ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}"
+      
+      # 2. Copy project files to server
+      rsync -avz --delete \
+        -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${SSH_PORT_SERVER:-22}" \
+        . "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/" \
+        --exclude='.git' --exclude='node_modules' --exclude='.env'
+      
+      # 3. Build Docker image and run container
+      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
+        "$SSH_USER_SERVER@$SSH_HOST_SERVER" "
+          cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}
+          docker build -t codechefs-backend:latest .
+          docker stop codechefs-backend || true
+          docker rm codechefs-backend || true
+          docker run -d --name codechefs-backend -p 3000:3000 codechefs-backend:latest
+        "
+    - rm -f ~/.ssh/id_rsa
