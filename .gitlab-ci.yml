@@ -82,10 +82,10 @@ deploy-to-server:
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
           -p "${SSH_PORT_SERVER:-22}" \
           "$SSH_USER_SERVER@$SSH_HOST_SERVER" \
-          "cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend} && \
-           npm ci && \
-           npm install -g pm2 && \
-           pm2 restart codechefs-backend || pm2 start src/index.js --name codechefs-backend"
-    
+          "mkdir -p ~/.npm-global && npm install -g pm2 --prefix ~/.npm-global && \
+           export PATH=\$HOME/.npm-global/bin:\$PATH && \
+           cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend} && \
+           npm ci && pm2 restart codechefs-backend || pm2 start src/index.js --name codechefs-backend"
+
     # Clean up SSH key
     - rm -f ~/.ssh/id_rsa
