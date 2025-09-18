@@ -45,13 +45,14 @@ deploy-to-server:
     # Test SSH key format
     - |
       echo "🔍 Testing SSH key format..."
-      if ssh-keygen -l -f ~/.ssh/id_rsa >/dev/null 2>&1; then
-        echo "✅ SSH key format is valid"
+      if ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null 2>&1; then
+        echo "✅ SSH private key format is valid"
       else
-        echo "❌ Error: SSH key format is invalid"
+        echo "❌ Error: SSH private key format is invalid"
         echo "Please ensure your private key is in OpenSSH format"
         exit 1
       fi
+
   script:
     
     # Test SSH connection
