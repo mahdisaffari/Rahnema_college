@@ -17,21 +17,33 @@ deploy-to-server:
   script:
     # Test SSH connection, create deploy dir, copy files, install deps, restart service
     - |
+      # 1. Create deploy directory on server
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
         "$SSH_USER_SERVER@$SSH_HOST_SERVER" "mkdir -p ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}"
       
+      # 2. Copy project files to server
       rsync -avz --delete \
         -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${SSH_PORT_SERVER:-22}" \
         . "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/" \
         --exclude='.git' --exclude='node_modules' --exclude='.env'
       
+#      ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
+#        "$SSH_USER_SERVER@$SSH_HOST_SERVER" "
+#          export PATH=\$HOME/.npm-global/bin:\$PATH
+#          mkdir -p ~/.npm-global
+#          npm install -g pm2 --prefix ~/.npm-global
+#          cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}
+#          npm ci
+#          pm2 restart codechefs-backend || pm2 start src/index.ts --name codechefs-backend
+#        "
+      
+      # 3. Build Docker image and run container
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
         "$SSH_USER_SERVER@$SSH_HOST_SERVER" "
-          export PATH=\$HOME/.npm-global/bin:\$PATH
-          mkdir -p ~/.npm-global
-          npm install -g pm2 --prefix ~/.npm-global
           cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}
-          npm ci
-          pm2 restart codechefs-backend || pm2 start src/index.ts --name codechefs-backend
-        "
+          docker build -t codechefs-backend:latest .
+          docker stop codechefs-backend || true
+          docker rm codechefs-backend || true
+          doc
+
     - rm -f ~/.ssh/id_rsa
