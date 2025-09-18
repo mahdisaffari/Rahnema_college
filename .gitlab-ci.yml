@@ -85,7 +85,7 @@ deploy-to-server:
           "mkdir -p ~/.npm-global && npm install -g pm2 --prefix ~/.npm-global && \
            export PATH=\$HOME/.npm-global/bin:\$PATH && \
            cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend} && \
-           npm ci && pm2 restart codechefs-backend || pm2 start src/index.js --name codechefs-backend"
+           npm ci && pm2 restart codechefs-backend || pm2 start src/index.ts --name codechefs-backend"
 
     # Clean up SSH key
     - rm -f ~/.ssh/id_rsa
