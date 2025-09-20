@@ -1,6 +1,13 @@
 #!/usr/bin/env sh
 set -eu
 
+# load .env file
+if [ -f .env ]; then
+  set -a
+  . .env
+  set +a
+fi
+
 : "${DATABASE_URL?DATABASE_URL must be set (e.g. postgresql://user:pass@host:5432/db)}"
 
 need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing $1" >&2; exit 1; }; }
