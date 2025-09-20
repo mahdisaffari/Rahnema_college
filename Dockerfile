@@ -18,5 +18,6 @@ RUN npx prisma generate
 EXPOSE 3000
 
 # Use our entrypoint to wait → migrate → start
-RUN chmod +x entrypoint.sh
-ENTRYPOINT ["bash", "-c", "entrypoint.sh"]
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["bash", "-c", "/entrypoint.sh"]
