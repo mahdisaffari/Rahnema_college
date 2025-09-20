@@ -19,4 +19,4 @@ EXPOSE 3000
 
 # Use our entrypoint to wait → migrate → start
 RUN chmod +x entrypoint.sh
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["bash", "-c", "entrypoint.sh"]
