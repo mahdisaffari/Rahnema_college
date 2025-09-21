@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register, logout } from "../modules/auth/auth.controller";
+import { login, register, logout, verifyEmailHandler, refreshHandler } from "../modules/auth/auth.controller";
 import { auth } from "../modules/auth/auth.middleware";
 import { upload } from "../config/multer.config";
 import { getProfileHandler, updateProfileHandler, getUserHandler } from "../modules/user/user.controller";
@@ -30,6 +30,8 @@ const searchByPostController = new SearchByPostController();
 router.post("/register", register);
 router.post("/login", login);
 router.post("/logout", logout);
+router.get("/verify-email", verifyEmailHandler);
+router.post("/refresh", refreshHandler);
 
 // مسیرهای پروفایل
 router.get("/profile", auth, getProfileHandler);

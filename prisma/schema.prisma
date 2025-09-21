@@ -17,7 +17,8 @@ model User {
   lastname              String?
   bio                   String?
   avatar                String?
-  isPrivate             Boolean        @default(false) // برای پروفایل خصوصی
+  isPrivate             Boolean        @default(false)
+  isVerified            Boolean        @default(false) // برای تأیید ایمیل
   posts                 Post[]
   likes                 Like[]
   bookmarks             Bookmark[]
@@ -34,6 +35,7 @@ model User {
   mentions              Mention[]
   comments              Comment[]
   commentLikes          CommentLike[]
+  verificationTokens    VerificationToken[]
   postCount             Int            @default(0)
   followerCount         Int            @default(0)
   followingCount        Int            @default(0)
@@ -52,14 +54,13 @@ model Post {
   mentions           Mention[]
   hashtags           PostHashtag[]
   comments           Comment[]
-  isCloseFriendsOnly Boolean      @default(false) // برای پست‌های کلوز فرند
+  isCloseFriendsOnly Boolean      @default(false)
   likeCount          Int          @default(0)
   bookmarkCount      Int          @default(0)
   commentCount       Int          @default(0)
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
-
-  Notification Notification[]
+  Notification       Notification[]
 }
 
 model PostImage {
@@ -76,7 +77,6 @@ model Like {
   postId    String
   post      Post     @relation(fields: [postId], references: [id])
   createdAt DateTime @default(now())
-
   @@unique([userId, postId])
   @@index([postId])
 }
@@ -88,7 +88,6 @@ model Bookmark {
   postId    String
   post      Post     @relation(fields: [postId], references: [id])
   createdAt DateTime @default(now())
-
   @@unique([userId, postId])
   @@index([postId])
 }
@@ -100,7 +99,6 @@ model Follow {
   follower    User     @relation("Follower", fields: [followerId], references: [id])
   following   User     @relation("Following", fields: [followingId], references: [id])
   createdAt   DateTime @default(now())
-
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
@@ -114,7 +112,6 @@ model FollowRequest {
   requester   User     @relation("Requester", fields: [requesterId], references: [id])
   target      User     @relation("Target", fields: [targetId], references: [id])
   createdAt   DateTime @default(now())
-
   @@unique([requesterId, targetId])
   @@index([requesterId])
   @@index([targetId])
@@ -127,7 +124,6 @@ model CloseFriend {
   user        User     @relation("UserCloseFriends", fields: [userId], references: [id])
   friend      User     @relation("FriendCloseFriends", fields: [friendId], references: [id])
   createdAt   DateTime @default(now())
-
   @@unique([userId, friendId])
   @@index([userId])
   @@index([friendId])
@@ -140,7 +136,6 @@ model Block {
   blocker     User     @relation("Blocker", fields: [blockerId], references: [id])
   blocked     User     @relation("Blocked", fields: [blockedId], references: [id])
   createdAt   DateTime @default(now())
-
   @@unique([blockerId, blockedId])
   @@index([blockerId])
   @@index([blockedId])
@@ -160,7 +155,6 @@ model Notification {
   post        Post?    @relation(fields: [postId], references: [id])
   comment     Comment? @relation(fields: [commentId], references: [id])
   createdAt   DateTime @default(now())
-
   @@index([userId])
   @@index([actorId])
   @@index([postId])
@@ -174,7 +168,6 @@ model Mention {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
-
   @@unique([postId, userId])
   @@index([postId])
   @@index([userId])
@@ -194,7 +187,6 @@ model Comment {
   likeCount Int          @default(0)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
-
   Notification Notification[]
 }
 
@@ -205,7 +197,6 @@ model CommentLike {
   user      User     @relation(fields: [userId], references: [id])
   comment   Comment  @relation(fields: [commentId], references: [id])
   createdAt DateTime @default(now())
-
   @@unique([userId, commentId])
   @@index([commentId])
 }
@@ -223,6 +214,14 @@ model PostHashtag {
   post      Post      @relation(fields: [postId], references: [id])
   hashtag   Hashtag   @relation(fields: [hashtagId], references: [id])
   createdAt DateTime  @default(now())
-
   @@unique([postId, hashtagId])
+}
+
+model VerificationToken {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 }

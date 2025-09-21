@@ -1,19 +1,25 @@
 import "dotenv/config";
+import { z } from "zod";
 import type { SignOptions } from "jsonwebtoken";
 
-function req(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
+const envSchema = z.object({
+  NODE_ENV: z.string().default("development"),
+  PORT: z.coerce.number().default(3000),
+  JWT_ACCESS_SECRET: z.string().min(1, "JWT_ACCESS_SECRET الزامی است"),
+  JWT_ACCESS_EXPIRES: z.string().optional().default("1h"),
+  JWT_REFRESH_SECRET: z.string().min(1, "JWT_REFRESH_SECRET الزامی است"),
+  JWT_REFRESH_EXPIRES_LONG: z.string().optional().default("30d"), 
+  JWT_REFRESH_EXPIRES_SHORT: z.string().optional().default("4h"), 
+  EMAIL_USER: z.string().min(1, "EMAIL_USER الزامی است"),
+  EMAIL_PASS: z.string().min(1, "EMAIL_PASS الزامی است"),
+  APP_URL: z.string().url("APP_URL باید URL معتبر باشد"),
+  DATABASE_URL: z.string().min(1, "DATABASE_URL الزامی است"),
+  SHADOW_DATABASE_URL: z.string().min(1, "SHADOW_DATABASE_URL الزامی است"),
+  MINIO_ENDPOINT: z.string().min(1).optional(),
+  MINIO_PORT: z.coerce.number().optional(),
+  MINIO_USE_SSL: z.coerce.boolean().optional(),
+  MINIO_ACCESS_KEY: z.string().min(1).optional(),
+  MINIO_SECRET_KEY: z.string().min(1).optional(),
+});
 
-function parseExpires(value: string): SignOptions["expiresIn"] {
-  return value as SignOptions["expiresIn"];
-}
-
-export const env = {
-  NODE_ENV: process.env.NODE_ENV ?? "development",
-  PORT: Number(process.env.PORT ?? 3000),
-  JWT_ACCESS_SECRET: req("JWT_ACCESS_SECRET"),
-  JWT_ACCESS_EXPIRES: parseExpires(process.env.JWT_ACCESS_EXPIRES ?? "15m"),
-};
+export const env = envSchema.parse(process.env);
