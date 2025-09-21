@@ -9,45 +9,57 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(uuid())
-  username      String   @unique
-  email         String   @unique
-  passwordHash  String
-  firstname     String?
-  lastname      String?
-  bio           String?
-  avatar        String?
-  posts         Post[]
-  likes         Like[]
-  bookmarks     Bookmark[]
-  followers     Follow[]   @relation("Follower")
-  following     Follow[]   @relation("Following")
-  mentions      Mention[]
-  comments      Comment[]  // اضافه شدن رابطه با کامنت‌ها
-  commentLikes  CommentLike[] // اضافه شدن رابطه با لایک‌های کامنت
-  postCount     Int        @default(0)
-  followerCount Int        @default(0)
-  followingCount Int       @default(0)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  id                    String         @id @default(uuid())
+  username              String         @unique
+  email                 String         @unique
+  passwordHash          String
+  firstname             String?
+  lastname              String?
+  bio                   String?
+  avatar                String?
+  isPrivate             Boolean        @default(false) // برای پروفایل خصوصی
+  posts                 Post[]
+  likes                 Like[]
+  bookmarks             Bookmark[]
+  followers             Follow[]       @relation("Follower")
+  following             Follow[]       @relation("Following")
+  followRequestsSent    FollowRequest[] @relation("Requester")
+  followRequestsReceived FollowRequest[] @relation("Target")
+  closeFriendsSent      CloseFriend[]  @relation("UserCloseFriends")
+  closeFriendsReceived  CloseFriend[]  @relation("FriendCloseFriends")
+  blockedUsers          Block[]        @relation("Blocker")
+  blockedBy             Block[]        @relation("Blocked")
+  notifications         Notification[] @relation
+  actions               Notification[] @relation("Actor")
+  mentions              Mention[]
+  comments              Comment[]
+  commentLikes          CommentLike[]
+  postCount             Int            @default(0)
+  followerCount         Int            @default(0)
+  followingCount        Int            @default(0)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
 }
 
 model Post {
-  id            String       @id @default(uuid())
-  caption       String?
-  userId        String
-  user          User         @relation(fields: [userId], references: [id])
-  images        PostImage[]
-  likes         Like[]
-  bookmarks     Bookmark[]
-  mentions      Mention[]
-  hashtags      PostHashtag[] // اضافه شدن رابطه با هشتگ‌ها
-  comments      Comment[]     // اضافه شدن رابطه با کامنت‌ها
-  likeCount     Int          @default(0)
-  bookmarkCount Int          @default(0)
-  commentCount  Int          @default(0) // اضافه شدن برای تعداد کامنت‌ها
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id                 String       @id @default(uuid())
+  caption            String?
+  userId             String
+  user               User         @relation(fields: [userId], references: [id])
+  images             PostImage[]
+  likes              Like[]
+  bookmarks          Bookmark[]
+  mentions           Mention[]
+  hashtags           PostHashtag[]
+  comments           Comment[]
+  isCloseFriendsOnly Boolean      @default(false) // برای پست‌های کلوز فرند
+  likeCount          Int          @default(0)
+  bookmarkCount      Int          @default(0)
+  commentCount       Int          @default(0)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  Notification Notification[]
 }
 
 model PostImage {
@@ -94,6 +106,67 @@ model Follow {
   @@index([followingId])
 }
 
+model FollowRequest {
+  id          String   @id @default(uuid())
+  requesterId String
+  targetId    String
+  status      String   @default("pending") // pending, accepted, rejected
+  requester   User     @relation("Requester", fields: [requesterId], references: [id])
+  target      User     @relation("Target", fields: [targetId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, targetId])
+  @@index([requesterId])
+  @@index([targetId])
+}
+
+model CloseFriend {
+  id          String   @id @default(uuid())
+  userId      String
+  friendId    String
+  user        User     @relation("UserCloseFriends", fields: [userId], references: [id])
+  friend      User     @relation("FriendCloseFriends", fields: [friendId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model Block {
+  id          String   @id @default(uuid())
+  blockerId   String
+  blockedId   String
+  blocker     User     @relation("Blocker", fields: [blockerId], references: [id])
+  blocked     User     @relation("Blocked", fields: [blockedId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  actorId     String
+  type        String   // mention, like, follow_request, follow, follow_action, unfollow, comment
+  postId      String?
+  commentId   String?
+  message     String?
+  isRead      Boolean  @default(false)
+  user        User     @relation(fields: [userId], references: [id])
+  actor       User     @relation("Actor", fields: [actorId], references: [id])
+  post        Post?    @relation(fields: [postId], references: [id])
+  comment     Comment? @relation(fields: [commentId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([actorId])
+  @@index([postId])
+  @@index([commentId])
+}
+
 model Mention {
   id        String   @id @default(uuid())
   postId    String
@@ -112,7 +185,7 @@ model Comment {
   content   String
   postId    String
   userId    String
-  parentId  String?      // برای ریپلای‌ها
+  parentId  String?
   post      Post         @relation(fields: [postId], references: [id])
   user      User         @relation(fields: [userId], references: [id])
   parent    Comment?     @relation("CommentReplies", fields: [parentId], references: [id])
@@ -121,6 +194,8 @@ model Comment {
   likeCount Int          @default(0)
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
+
+  Notification Notification[]
 }
 
 model CommentLike {
