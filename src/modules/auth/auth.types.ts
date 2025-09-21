@@ -19,11 +19,13 @@ export interface RegisterResponse {
 export interface LoginRequest {
   identifier: string; // username or email
   password: string;
+  rememberMe?: boolean; 
 }
 
 export interface LoginResponse {
   success: boolean;
   message: string;
   token?: string;
+  refresh?: string;
   username?: string; 
 }
