@@ -1,8 +1,9 @@
+
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { normEmail, RegisterSchema, LoginSchema } from "../../utils/validators";
 import { signAccessToken, signRefreshToken } from "../../utils/jwt";
-import { sendVerificationEmail } from "../../utils/email";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../../utils/email";
 import { v4 as randomUUID } from 'uuid';
 import { env } from "../../config/env";
 import jwt from "jsonwebtoken";
@@ -59,4 +60,30 @@ export const refreshAccessToken = async (refreshToken: string) => {
   } catch {
     throw new Error("رفرش توکن نامعتبر");
   }
+};
+
+
+export const forgotPassword = async (email: string) => {
+  const user = await prisma.user.findUnique({ where: { email: normEmail(email) } });
+  if (!user) throw new Error("کاربر یافت نشد");
+  const token = randomUUID();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); 
+  await prisma.passwordResetToken.create({
+    data: { token, userId: user.id, expiresAt },
+  });
+  await sendPasswordResetEmail(normEmail(email), token);
+};
+
+
+export const resetPassword = async (token: string, newPassword: string) => {
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+  if (!resetToken || resetToken.expiresAt < new Date()) {
+    throw new Error("توکن نامعتبر یا منقضی شده");
+  }
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: resetToken.userId },
+    data: { passwordHash },
+  });
+  await prisma.passwordResetToken.delete({ where: { token } });
 };
