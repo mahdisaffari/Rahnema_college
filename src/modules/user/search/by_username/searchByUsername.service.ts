@@ -27,6 +27,7 @@ export async function searchByUsername(
         postCount: true,
         followerCount: true,
         followingCount: true,
+        isPrivate: true, 
         following: {
           select: { followerId: true },
           where: { followerId: currentUserId },
