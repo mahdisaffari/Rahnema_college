@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
 import { Request, Response, NextFunction } from "express";
 import { AuthUser } from "./auth.types";
+import rateLimit from "express-rate-limit";
 
 /**
  * baresi token jwt dar har dakhst(login) agar jwt valide 
@@ -33,3 +34,8 @@ export function auth(req: Request, res: Response, next: NextFunction) {
     next();
   }
 }
+
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  message: { success: false, message: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً 15 دقیقه صبر کنید." },
+});
