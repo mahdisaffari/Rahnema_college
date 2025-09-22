@@ -19,7 +19,7 @@ export interface RegisterResponse {
 export interface LoginRequest {
   identifier: string; // username or email
   password: string;
-  rememberMe?: boolean; 
+  rememberMe?: boolean;
 }
 
 export interface LoginResponse {
@@ -27,5 +27,24 @@ export interface LoginResponse {
   message: string;
   token?: string;
   refresh?: string;
-  username?: string; 
+  username?: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
 }
