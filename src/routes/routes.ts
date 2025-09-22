@@ -32,6 +32,8 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.get("/verify-email", verifyEmailHandler);
 router.post("/refresh", refreshHandler);
+//router.post('/forgot-password', forgotPasswordHandler); 
+//router.post('/reset-password', resetPasswordHandler); 
 
 // مسیرهای پروفایل
 router.get("/profile", auth, getProfileHandler);
