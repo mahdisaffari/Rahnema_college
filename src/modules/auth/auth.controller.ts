@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import * as authService from './auth.service';
-import { validateLogin, validateRegister } from './auth.validator';
+import { validateLogin, validateRegister, validateForgotPassword, validateResetPassword } from './auth.validator';
 import { clearAuthCookies, setAuthCookies, refreshCookieName } from '../../utils/jwt';
-import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from './auth.types';
+import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, ForgotPasswordRequest, ResetPasswordRequest, ForgotPasswordResponse, ResetPasswordResponse } from './auth.types';
 import { handleError } from '../../utils/errorHandler';
 
 export async function register(req: Request<{}, {}, RegisterRequest>, res: Response<RegisterResponse>) {
@@ -22,13 +22,13 @@ export async function login(req: Request<{}, {}, LoginRequest>, res: Response<Lo
     if (error) return res.status(400).json({ success: false, message: error });
     const { access, refresh, username } = await authService.login(req.body.identifier, req.body.password, req.body.rememberMe);
     setAuthCookies(res, access, refresh, req.body.rememberMe || false);
-    return res.json({ 
-      success: true, 
-      message: 'ورود موفق', 
-      token: access, 
-      refresh, 
-      username 
-    }); 
+    return res.json({
+      success: true,
+      message: 'ورود موفق',
+      token: access,
+      refresh,
+      username
+    });
   } catch (error) {
     return handleError(error, res, 'اعتبارنامه‌های نامعتبر', 401);
   }
@@ -64,5 +64,29 @@ export async function refreshHandler(req: Request, res: Response) {
   } catch (error) {
     clearAuthCookies(res);
     return handleError(error, res, 'رفرش ناموفق', 401);
+  }
+}
+
+
+export async function forgotPasswordHandler(req: Request<{}, {}, ForgotPasswordRequest>, res: Response<ForgotPasswordResponse>) {
+  try {
+    const error = validateForgotPassword(req.body);
+    if (error) return res.status(400).json({ success: false, message: error });
+    await authService.forgotPassword(req.body.email);
+    return res.json({ success: true, message: 'ایمیل بازنشانی ارسال شد' });
+  } catch (error) {
+    return handleError(error, res, 'خطا در درخواست بازنشانی', 400);
+  }
+}
+
+
+export async function resetPasswordHandler(req: Request<{}, {}, ResetPasswordRequest>, res: Response<ResetPasswordResponse>) {
+  try {
+    const error = validateResetPassword(req.body);
+    if (error) return res.status(400).json({ success: false, message: error });
+    await authService.resetPassword(req.body.token, req.body.newPassword);
+    return res.json({ success: true, message: 'رمز عبور تغییر کرد' });
+  } catch (error) {
+    return handleError(error, res, 'خطا در تغییر رمز عبور', 400);
   }
 }
