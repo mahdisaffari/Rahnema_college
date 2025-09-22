@@ -13,6 +13,7 @@
 // baraye estefade roye server
 
 import * as Minio from "minio";
+import { env } from "./env";
 
   export const minioClient = new Minio.Client({
     endPoint: process.env.MINIO_ENDPOINT || 'localhost',
@@ -21,3 +22,5 @@ import * as Minio from "minio";
     accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
     secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
   });
+
+export const bucketName = env.MINIO_BUCKET_NAME || "rahnama"; 

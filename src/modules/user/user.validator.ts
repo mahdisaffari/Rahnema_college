@@ -25,3 +25,8 @@ export const validateProfileUpdate = (data: {
     return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";
   }
 };
+
+export const validatePrivateToggle = (isPrivate: boolean): string | null => {
+  if (typeof isPrivate !== 'boolean') return 'isPrivate باید boolean باشد';
+  return null;
+};
