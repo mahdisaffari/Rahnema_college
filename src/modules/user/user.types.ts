@@ -24,6 +24,7 @@ export interface UserResponse {
   followingCount: number;
   isFollowedByMe: boolean; // required for other users
   isFollowingMe: boolean;
+  isPrivate: boolean; 
 }
 
 export interface UserUpdateRequest {
@@ -39,4 +40,14 @@ export interface UserApiResponse<T> {
   success: boolean;
   message: string;
   data?: T;
+}
+
+export interface PrivateToggleRequest {
+  isPrivate: boolean;
+}
+
+export interface PrivateToggleResponse {
+  success: boolean;
+  message: string;
+  data: { isPrivate: boolean };
 }

@@ -20,6 +20,7 @@ const envSchema = z.object({
   MINIO_USE_SSL: z.coerce.boolean().optional(),
   MINIO_ACCESS_KEY: z.string().min(1).optional(),
   MINIO_SECRET_KEY: z.string().min(1).optional(),
+  MINIO_BUCKET_NAME: z.string().min(1).default("rahnama"),
 });
 
 export const env = envSchema.parse(process.env);

@@ -2,7 +2,9 @@ import { PrismaClient } from '@prisma/client';
 import { ProfileResponse, UserResponse } from './user.types';
 import { normEmail } from '../../utils/validators';
 import bcrypt from 'bcryptjs';
-import { cloudinary } from '../../config/cloudinary.config';
+import { minioClient, bucketName } from '../../config/minio.config';
+import { Readable } from 'stream';
+import { env } from '../../config/env';
 
 const prisma = new PrismaClient();
 
@@ -25,7 +27,7 @@ export async function getProfile(userId: string): Promise<ProfileResponse | null
 
   if (!user) return null;
 
-  return { ...user, isFollowedByMe: false }; // برای کاربر جاری، همیشه false
+  return { ...user, isFollowedByMe: false };
 }
 
 export async function getUserByUsername(username: string, currentUserId: string): Promise<UserResponse | null> {
@@ -41,6 +43,7 @@ export async function getUserByUsername(username: string, currentUserId: string)
       postCount: true,
       followerCount: true,
       followingCount: true,
+      isPrivate: true,
       following: currentUserId ? {
         select: { followerId: true },
         where: { followerId: currentUserId },
@@ -54,6 +57,15 @@ export async function getUserByUsername(username: string, currentUserId: string)
 
   if (!user) return null;
 
+  if (user.isPrivate && currentUserId && user.id !== currentUserId) {
+    const isFollower = await prisma.follow.findFirst({
+      where: { followingId: user.id, followerId: currentUserId },
+    });
+    if (!isFollower) {
+      user.postCount = 0;
+    }
+  }
+
   return {
     ...user,
     isFollowedByMe: currentUserId && user.id !== currentUserId ? user.following.length > 0 : false,
@@ -61,36 +73,32 @@ export async function getUserByUsername(username: string, currentUserId: string)
   };
 }
 
-// ... بقیه توابع (بدون تغییر)
 export async function uploadAvatar(
   userId: string,
   file: Express.Multer.File
 ): Promise<string> {
   if (!file.buffer || file.buffer.length === 0) throw new Error('Empty file');
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader
-      .upload_stream(
-        { public_id: `${userId}-${Date.now()}`, folder: 'avatars' },
-        (error, result) =>
-          error ? reject(error) : resolve(result!.secure_url)
-      )
-      .end(file.buffer);
-  });
-}
 
-function extractPublicIdFromUrl(url: string): string {
-  const parts = url.split('/');
-  const filename = parts[parts.length - 1].split('.')[0];
-  return `avatars/${filename}`;
-}
+  const fileName = `avatars/${userId}-${Date.now()}-${file.originalname}`;
+  const stream = Readable.from(file.buffer);
 
-async function deleteAvatarFromCloudinary(publicId: string): Promise<void> {
-  await new Promise((resolve, reject) => {
-    cloudinary.uploader.destroy(publicId, (error, result) => {
-      if (error) reject(new Error('خطا در حذف اواتار از Cloudinary'));
-      resolve(result);
+  try {
+    await minioClient.putObject(bucketName, fileName, stream, file.size, {
+      'Content-Type': file.mimetype,
     });
-  });
+    const url = `${env.MINIO_ENDPOINT}:${env.MINIO_PORT}/${bucketName}/${fileName}`;
+    return url;
+  } catch (error) {
+    throw new Error(`Failed to upload avatar to MinIO: ${error}`);
+  }
+}
+
+export async function deleteAvatarFromMinIO(objectName: string): Promise<void> {
+  try {
+    await minioClient.removeObject(bucketName, objectName);
+  } catch (error) {
+    throw new Error(`Failed to delete avatar from MinIO: ${error}`);
+  }
 }
 
 export async function updateProfile(
@@ -111,9 +119,7 @@ export async function updateProfile(
   if (data.bio !== undefined) updateData.bio = data.bio;
   if (data.email) {
     const normalizedEmail = normEmail(data.email);
-    console.log("Checking email:", normalizedEmail, "for userId:", userId);
     const existingUser = await prisma.user.findFirst({ where: { email: normalizedEmail, NOT: { id: userId } } });
-    console.log("Found user:", existingUser);
     if (existingUser) throw new Error('ایمیل تکراری است');
     updateData.email = normalizedEmail;
   }
@@ -126,8 +132,8 @@ export async function updateProfile(
         select: { avatar: true },
       });
       if (currentUser?.avatar) {
-        const publicId = extractPublicIdFromUrl(currentUser.avatar);
-        await deleteAvatarFromCloudinary(publicId);
+        const objectName = extractObjectNameFromUrl(currentUser.avatar);
+        await deleteAvatarFromMinIO(objectName);
       }
       updateData.avatar = null;
     } else if (data.avatar) {
@@ -151,4 +157,18 @@ export async function updateProfile(
       followingCount: true,
     },
   });
+}
+
+export async function togglePrivateProfile(userId: string, isPrivate: boolean): Promise<{ isPrivate: boolean }> {
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { isPrivate },
+    select: { isPrivate: true },
+  });
+  return updatedUser;
+}
+
+function extractObjectNameFromUrl(url: string): string {
+  const parts = url.split('/');
+  return parts.slice(-2).join('/'); // e.g., "avatars/userId-timestamp.jpg"
 }

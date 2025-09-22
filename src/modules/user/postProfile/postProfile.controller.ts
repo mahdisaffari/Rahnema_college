@@ -23,8 +23,9 @@ export async function getPostProfileHandler(req: AuthRequest, res: Response<getP
 // baraye gereftan post haye har karbar ba username
 export async function getPostsByUsernameHandler(req: Request, res: Response<getPostProfileApiResponse<PostResponseData[]>>) {
   try {
-    const username = req.params.username; // url ke karbar darkhst dade 
-    const posts = await getPostsByUsername(username);
+    const username = req.params.username; // url ke karbar darkhst dade
+    const viewerId = (req as AuthRequest).user?.id; 
+    const posts = await getPostsByUsername(username, viewerId);
     return res.json({
       success: true,
       message: posts.length ? 'پست‌ها دریافت شدند' : 'هیچ پستی یافت نشد',

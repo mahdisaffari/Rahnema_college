@@ -2,8 +2,8 @@ import { Router } from "express";
 import { login, register, logout, verifyEmailHandler, refreshHandler } from "../modules/auth/auth.controller";
 import { auth } from "../modules/auth/auth.middleware";
 import { upload } from "../config/multer.config";
-import { getProfileHandler, updateProfileHandler, getUserHandler } from "../modules/user/user.controller";
-import { validateProfileUpdateMiddleware, validateUsernameMiddleware } from "../modules/user/user.middleware";
+import { getProfileHandler, updateProfileHandler, getUserHandler, togglePrivateProfileHandler } from "../modules/user/user.controller";
+import { validatePrivateToggleMiddleware, validateProfileUpdateMiddleware, validateUsernameMiddleware } from "../modules/user/user.middleware";
 import { validateAllMiddleware, validateGetUserPostsMiddleware } from "../modules/post/post.middleware";
 import { createSetupPostHandler, getPostHandler, getUserPostsHandler } from "../modules/post/post.controller";
 import { editPostHandler } from "../modules/post/editPost/editPost.controller"; 
@@ -36,6 +36,7 @@ router.post("/refresh", refreshHandler);
 // مسیرهای پروفایل
 router.get("/profile", auth, getProfileHandler);
 router.put("/profile", auth, upload.single("avatar"), validateProfileUpdateMiddleware, updateProfileHandler);
+router.put("/profile/toggle-private", auth, validatePrivateToggleMiddleware, togglePrivateProfileHandler); 
 router.get("/profile/posts", auth, getPostProfileHandler);
 
 // مسیرهای کاربر

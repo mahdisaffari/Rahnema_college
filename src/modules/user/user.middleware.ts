@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { validateProfileUpdate, validateUsername } from './user.validator';
-import { UserApiResponse, ProfileResponse, UserResponse } from './user.types';
+import { validatePrivateToggle, validateProfileUpdate, validateUsername } from './user.validator';
+import { UserApiResponse, ProfileResponse, UserResponse, PrivateToggleResponse } from './user.types';
 import { AuthRequest } from '../auth/auth.middleware';
 
 export function validateProfileUpdateMiddleware(req: AuthRequest, res: Response<UserApiResponse<ProfileResponse>>, next: NextFunction) {
@@ -21,5 +21,17 @@ export function validateUsernameMiddleware(req: Request, res: Response<UserApiRe
   if (error) {
     return res.status(400).json({ success: false, message: error });
   }
+  next();
+}
+
+export function validatePrivateToggleMiddleware(req: AuthRequest, res: Response<PrivateToggleResponse>, next: NextFunction) {
+  const { isPrivate } = req.body;
+  const error = validatePrivateToggle(isPrivate);
+  if (error) return res.status(400).json({
+    success: false, message: error,
+    data: {
+      isPrivate: false
+    }
+  });
   next();
 }
