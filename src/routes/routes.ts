@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { login, register, logout, verifyEmailHandler, refreshHandler } from "../modules/auth/auth.controller";
-import { auth } from "../modules/auth/auth.middleware";
+import { auth, forgotPasswordLimiter } from "../modules/auth/auth.middleware";
 import { upload } from "../config/multer.config";
 import { getProfileHandler, updateProfileHandler, getUserHandler, togglePrivateProfileHandler } from "../modules/user/user.controller";
 import { validatePrivateToggleMiddleware, validateProfileUpdateMiddleware, validateUsernameMiddleware } from "../modules/user/user.middleware";
@@ -32,8 +32,8 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.get("/verify-email", verifyEmailHandler);
 router.post("/refresh", refreshHandler);
-//router.post('/forgot-password', forgotPasswordHandler); 
-//router.post('/reset-password', resetPasswordHandler); 
+//router.post("/forgot-password", forgotPasswordLimiter, forgotPasswordHandler);
+//router.post("/reset-password", resetPasswordHandler);
 
 // مسیرهای پروفایل
 router.get("/profile", auth, getProfileHandler);
