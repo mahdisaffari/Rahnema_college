@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register, logout, verifyEmailHandler, refreshHandler } from "../modules/auth/auth.controller";
+import { login, register, logout, verifyEmailHandler, refreshHandler, forgotPasswordHandler, resetPasswordHandler } from "../modules/auth/auth.controller";
 import { auth, forgotPasswordLimiter } from "../modules/auth/auth.middleware";
 import { upload } from "../config/multer.config";
 import { getProfileHandler, updateProfileHandler, getUserHandler, togglePrivateProfileHandler, addCloseFriendHandler, removeCloseFriendHandler } from "../modules/user/user.controller";
@@ -22,6 +22,7 @@ import { validateBookmarkedPostsMiddleware } from "../modules/user/Bookmarked_Po
 import { getUserBookmarkedPostsHandler } from "../modules/user/Bookmarked_Post/bookmarkedPost.controller";
 import { getUserMentionedPostsHandler } from "../modules/user/Mentioned_Post/mentionedPost.controller";
 import { searchByUsernameController } from "../modules/user/search/by_username/searchByUsername.controller";
+import { getCloseFriendListHandler } from "../modules/user/closeFriendList/closeFriendList.controller";
 
 const router = Router();
 const searchByPostController = new SearchByPostController();
@@ -32,15 +33,15 @@ router.post("/login", login);
 router.post("/logout", logout);
 router.get("/verify-email", verifyEmailHandler);
 router.post("/refresh", refreshHandler);
-//router.post("/forgot-password", forgotPasswordLimiter, forgotPasswordHandler);
-//router.post("/reset-password", resetPasswordHandler);
+router.post("/forgot-password", forgotPasswordLimiter, forgotPasswordHandler);
+router.post("/reset-password", resetPasswordHandler);
 
 // مسیرهای پروفایل
 router.get("/profile", auth, getProfileHandler);
 router.put("/profile", auth, upload.single("avatar"), validateProfileUpdateMiddleware, updateProfileHandler);
 router.put("/profile/toggle-private", auth, validatePrivateToggleMiddleware, togglePrivateProfileHandler); 
 router.get("/profile/posts", auth, getPostProfileHandler);
-
+router.get('/user/close-friends', auth, getCloseFriendListHandler);
 // مسیرهای کاربر
 router.get("/users/:username", auth, validateUsernameMiddleware, getUserHandler);
 router.post("/close-friends/:username/add", auth, validateCloseFriend, addCloseFriendHandler);
