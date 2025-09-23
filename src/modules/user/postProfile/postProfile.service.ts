@@ -4,7 +4,7 @@ import { PostResponseData } from './postProfile.types';
 const prisma = new PrismaClient();
 
 // tamam post haey yek user ro moshakhas mikonim
-export async function getUserPosts(userId: string, viewerId?: string): Promise<PostResponseData[]> { 
+export async function getUserPosts(userId: string, viewerId?: string): Promise<PostResponseData[]> {
   if (viewerId && userId !== viewerId) {
     const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { isPrivate: true } });
     if (targetUser?.isPrivate) {
@@ -15,7 +15,7 @@ export async function getUserPosts(userId: string, viewerId?: string): Promise<P
     }
   }
 
-  return prisma.post.findMany({
+  const posts = await prisma.post.findMany({
     where: { userId },
     select: {
       id: true,
@@ -23,12 +23,22 @@ export async function getUserPosts(userId: string, viewerId?: string): Promise<P
       images: true,
       likeCount: true,
       bookmarkCount: true,
+      isCloseFriendsOnly: true,
     },
   });
+
+  if (viewerId && userId !== viewerId) {
+    const isCloseFriend = await prisma.closeFriend.findFirst({
+      where: { userId, friendId: viewerId },
+    });
+    return posts.filter(post => !post.isCloseFriendsOnly || isCloseFriend);
+  }
+
+  return posts;
 }
 
 // hamone vali ba username kar mikone vaghti peyda kard balayy ro seda mikone
-export async function getPostsByUsername(username: string, viewerId?: string): Promise<PostResponseData[]> { 
+export async function getPostsByUsername(username: string, viewerId?: string): Promise<PostResponseData[]> {
   const user = await prisma.user.findUnique({
     where: { username },
     select: { id: true, isPrivate: true },

@@ -3,6 +3,9 @@ import { getProfile, updateProfile, getUserByUsername, togglePrivateProfile } fr
 import { ProfileResponse, UserResponse, UserApiResponse, UserUpdateRequest, PrivateToggleResponse } from './user.types';
 import { AuthRequest } from '../auth/auth.middleware';
 import { handleError } from '../../utils/errorHandler';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function getProfileHandler(req: AuthRequest, res: Response<UserApiResponse<ProfileResponse>>) {
   try {
@@ -67,5 +70,48 @@ export async function togglePrivateProfileHandler(req: AuthRequest, res: Respons
     });
   } catch (error) {
     return handleError(error, res, 'خطا در تغییر وضعیت پروفایل');
+  }
+}
+
+export async function addCloseFriendHandler(req: AuthRequest, res: Response) {
+  try {
+    const { username } = req.params;
+    const userId = req.user!.id;
+    const friend = await prisma.user.findUnique({ where: { username } });
+    if (!friend) {
+      return handleError(new Error('کاربر یافت نشد'), res, 'کاربر یافت نشد', 404);
+    }
+    if (friend.id === userId) {
+      return handleError(new Error('نمی‌توانید خودتان را اضافه کنید'), res, 'نمی‌توانید خودتان را اضافه کنید', 400);
+    }
+    const existing = await prisma.closeFriend.findFirst({
+      where: { userId, friendId: friend.id },
+    });
+    if (existing) {
+      return handleError(new Error('کاربر قبلاً در لیست دوستان نزدیک است'), res, 'کاربر قبلاً در لیست دوستان نزدیک است', 400);
+    }
+    await prisma.closeFriend.create({
+      data: { userId, friendId: friend.id },
+    });
+    return res.status(200).json({ success: true, message: 'کاربر به دوستان نزدیک اضافه شد' });
+  } catch (error) {
+    return handleError(error, res, 'خطا در افزودن دوست نزدیک');
+  }
+}
+
+export async function removeCloseFriendHandler(req: AuthRequest, res: Response) {
+  try {
+    const { username } = req.params;
+    const userId = req.user!.id;
+    const friend = await prisma.user.findUnique({ where: { username } });
+    if (!friend) {
+      return handleError(new Error('کاربر یافت نشد'), res, 'کاربر یافت نشد', 404);
+    }
+    await prisma.closeFriend.deleteMany({
+      where: { userId, friendId: friend.id },
+    });
+    return res.status(200).json({ success: true, message: 'کاربر از دوستان نزدیک حذف شد' });
+  } catch (error) {
+    return handleError(error, res, 'خطا در حذف دوست نزدیک');
   }
 }

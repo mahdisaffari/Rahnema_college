@@ -2,7 +2,7 @@ import { Router } from "express";
 import { login, register, logout, verifyEmailHandler, refreshHandler } from "../modules/auth/auth.controller";
 import { auth, forgotPasswordLimiter } from "../modules/auth/auth.middleware";
 import { upload } from "../config/multer.config";
-import { getProfileHandler, updateProfileHandler, getUserHandler, togglePrivateProfileHandler } from "../modules/user/user.controller";
+import { getProfileHandler, updateProfileHandler, getUserHandler, togglePrivateProfileHandler, addCloseFriendHandler, removeCloseFriendHandler } from "../modules/user/user.controller";
 import { validatePrivateToggleMiddleware, validateProfileUpdateMiddleware, validateUsernameMiddleware } from "../modules/user/user.middleware";
 import { validateAllMiddleware, validateGetUserPostsMiddleware } from "../modules/post/post.middleware";
 import { createSetupPostHandler, getPostHandler, getUserPostsHandler } from "../modules/post/post.controller";
@@ -14,7 +14,7 @@ import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.mi
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
 import { getFollowersHandler, getFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
 import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCommentsHandler } from "../modules/post/comment/comment.controller";
-import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments } from "../utils/validators";
+import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments, validateCloseFriend } from "../utils/validators";
 import { getHomepageHandler } from "../modules/user/homepage/homepage.controller";
 import { validateHomepageMiddleware } from "../modules/user/homepage/homepage.middleware";
 import { SearchByPostController } from "../modules/user/search/by_post/searchByPost.controller";
@@ -43,6 +43,8 @@ router.get("/profile/posts", auth, getPostProfileHandler);
 
 // مسیرهای کاربر
 router.get("/users/:username", auth, validateUsernameMiddleware, getUserHandler);
+router.post("/close-friends/:username/add", auth, validateCloseFriend, addCloseFriendHandler);
+router.post("/close-friends/:username/remove", auth, validateCloseFriend, removeCloseFriendHandler);
 
 // مسیرهای پست
 router.post("/posts", auth, upload.array("images", 5), validateAllMiddleware, createSetupPostHandler);

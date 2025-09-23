@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { ProfileResponse, UserResponse } from './user.types';
+import { ProfileResponse, UserResponse, UserUpdateRequest } from './user.types';
 import { normEmail } from '../../utils/validators';
 import bcrypt from 'bcryptjs';
 import { minioClient, bucketName } from '../../config/minio.config';
@@ -73,44 +73,22 @@ export async function getUserByUsername(username: string, currentUserId: string)
   };
 }
 
-export async function uploadAvatar(
-  userId: string,
-  file: Express.Multer.File
-): Promise<string> {
-  if (!file.buffer || file.buffer.length === 0) throw new Error('Empty file');
-
-  const fileName = `avatars/${userId}-${Date.now()}-${file.originalname}`;
+async function uploadAvatar(userId: string, file: Express.Multer.File): Promise<string> {
+  const objectName = `avatars/${userId}-${Date.now()}-${file.originalname}`;
   const stream = Readable.from(file.buffer);
-
-  try {
-    await minioClient.putObject(bucketName, fileName, stream, file.size, {
-      'Content-Type': file.mimetype,
-    });
-    const url = `${env.MINIO_ENDPOINT}:${env.MINIO_PORT}/${bucketName}/${fileName}`;
-    return url;
-  } catch (error) {
-    throw new Error(`Failed to upload avatar to MinIO: ${error}`);
-  }
+  await minioClient.putObject(bucketName, objectName, stream, file.size, {
+    'Content-Type': file.mimetype,
+  });
+  return `${env.MINIO_ENDPOINT}:${env.MINIO_PORT}/${bucketName}/${objectName}`;
 }
 
-export async function deleteAvatarFromMinIO(objectName: string): Promise<void> {
-  try {
-    await minioClient.removeObject(bucketName, objectName);
-  } catch (error) {
-    throw new Error(`Failed to delete avatar from MinIO: ${error}`);
-  }
+async function deleteAvatarFromMinIO(objectName: string): Promise<void> {
+  await minioClient.removeObject(bucketName, objectName);
 }
 
 export async function updateProfile(
   userId: string,
-  data: {
-    firstname?: string | null;
-    lastname?: string | null;
-    bio?: string | null;
-    avatar?: Express.Multer.File | null;
-    email?: string;
-    password?: string;
-  }
+  data: UserUpdateRequest
 ): Promise<ProfileResponse> {
   const updateData: Partial<ProfileResponse & { passwordHash?: string }> = {};
 
