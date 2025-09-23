@@ -21,6 +21,7 @@ import { SearchByPostController } from "../modules/user/search/by_post/searchByP
 import { validateBookmarkedPostsMiddleware } from "../modules/user/Bookmarked_Post/bookmarkedPost.meddleware";
 import { getUserBookmarkedPostsHandler } from "../modules/user/Bookmarked_Post/bookmarkedPost.controller";
 import { getUserMentionedPostsHandler } from "../modules/user/Mentioned_Post/mentionedPost.controller";
+import { blockUserHandler, unblockUserHandler, getBlockedUsersHandler } from "../modules/user/Blocking_user/Blocked_list/Block.controller";
 import { searchByUsernameController } from "../modules/user/search/by_username/searchByUsername.controller";
 import { getCloseFriendListHandler } from "../modules/user/closeFriendList/closeFriendList.controller";
 
@@ -65,6 +66,11 @@ router.get("/posts/:id/comments", auth, validateGetPostComments, getPostComments
 // مسیرهای فالو/آنفالو
 router.post("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
 //router.delete("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
+
+// مسیرهای بلاک
+router.post("/users/:username/block", auth, validateUsernameMiddleware, blockUserHandler);
+router.delete("/users/:username/block", auth, validateUsernameMiddleware, unblockUserHandler);
+router.get("/users/blocks", auth, getBlockedUsersHandler);
 
 // مسیرهای فالوورها و فالویینگ‌ها
 router.get("/users/followers", auth, getFollowersHandler);
