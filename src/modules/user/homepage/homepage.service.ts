@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { HomepagePostResponse } from './homepage.types';
+import { isBlocked } from '../../../utils/blockUtils';
 
 const prisma = new PrismaClient();
 
@@ -18,9 +19,21 @@ export async function getHomepagePosts(
     return { posts: [], total: 0 };
   }
 
+  // Filter out blocked users
+  const validFollowingIds = [];
+  for (const followingId of followingIds) {
+    if (!(await isBlocked(userId, followingId))) {
+      validFollowingIds.push(followingId);
+    }
+  }
+
+  if (validFollowingIds.length === 0) {
+    return { posts: [], total: 0 };
+  }
+
   const [posts, total] = await Promise.all([
     prisma.post.findMany({
-      where: { userId: { in: followingIds } },
+      where: { userId: { in: validFollowingIds } },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: 'desc' }, 
@@ -42,7 +55,7 @@ export async function getHomepagePosts(
         hashtags: { include: { hashtag: { select: { name: true } } } },
       },
     }),
-    prisma.post.count({ where: { userId: { in: followingIds } } }),
+    prisma.post.count({ where: { userId: { in: validFollowingIds } } }),
   ]);
 
   const mappedPosts: HomepagePostResponse[] = posts.map(post => ({

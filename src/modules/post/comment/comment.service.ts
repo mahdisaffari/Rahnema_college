@@ -1,21 +1,21 @@
 import { PrismaClient } from '@prisma/client';
 import { CommentResponse } from './comment.types';
+import { isBlocked } from '../../../utils/blockUtils';
 
 const prisma = new PrismaClient();
 
-// sakht comment baraye post
 export async function createComment(
   userId: string,
   postId: string,
   content: string
 ): Promise<CommentResponse> {
-  // baresi vojood post
   const post = await prisma.post.findUnique({
     where: { id: postId },
+    select: { userId: true },
   });
   if (!post) throw new Error('پست یافت نشد');
+  if (await isBlocked(userId, post.userId)) throw new Error('نمی‌توانید روی پست این کاربر کامنت بگذارید (بلاک شده)');
 
-  // ijad comment
   const comment = await prisma.comment.create({
     data: {
       content,
@@ -35,7 +35,6 @@ export async function createComment(
     },
   });
 
-  // afzayesh tedad comment haye post
   await prisma.post.update({
     where: { id: postId },
     data: { commentCount: { increment: 1 } },
@@ -48,30 +47,28 @@ export async function createComment(
     user: comment.user,
     postId: comment.postId,
     likeCount: comment.likeCount,
-    replies: [], 
+    replies: [],
   };
 }
 
-// sakht reply baraye comment
 export async function createReply(
   userId: string,
   postId: string,
   commentId: string,
   content: string
 ): Promise<CommentResponse> {
-  // baresi vojood post
   const post = await prisma.post.findUnique({
     where: { id: postId },
+    select: { userId: true },
   });
   if (!post) throw new Error('پست یافت نشد');
+  if (await isBlocked(userId, post.userId)) throw new Error('نمی‌توانید روی پست این کاربر ریپلای بگذارید (بلاک شده)');
 
-  // baresi vojood comment
   const parentComment = await prisma.comment.findUnique({
     where: { id: commentId },
   });
   if (!parentComment) throw new Error('کامنت یافت نشد');
 
-  // ijad reply
   const reply = await prisma.comment.create({
     data: {
       content,
@@ -92,12 +89,6 @@ export async function createReply(
     },
   });
 
-  // afzayesh tedad comment haye post
-  await prisma.post.update({
-    where: { id: postId },
-    data: { commentCount: { increment: 1 } },
-  });
-
   return {
     id: reply.id,
     content: reply.content,
@@ -105,120 +96,98 @@ export async function createReply(
     user: reply.user,
     postId: reply.postId,
     likeCount: reply.likeCount,
-    replies: [], 
+    replies: [],
   };
 }
 
-// like ya unlike kardan comment
-export async function likeComment(
-  userId: string,
-  commentId: string
-): Promise<{ likeCount: number; liked: boolean }> {
-  // baresi vojood comment
+export async function likeComment(userId: string, commentId: string): Promise<{ liked: boolean; likeCount: number }> {
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
+    select: { post: { select: { userId: true } } },
   });
   if (!comment) throw new Error('کامنت یافت نشد');
+  if (await isBlocked(userId, comment.post.userId)) throw new Error('نمی‌توانید کامنت این پست را لایک کنید (بلاک شده)');
 
-  // check kardan like ghabli
   const existingLike = await prisma.commentLike.findUnique({
-    where: {
-      userId_commentId: { userId, commentId },
-    },
+    where: { userId_commentId: { userId, commentId } },
   });
 
   if (existingLike) {
-    // hazf like
     await prisma.commentLike.delete({
-      where: {
-        userId_commentId: { userId, commentId },
-      },
+      where: { userId_commentId: { userId, commentId } },
     });
-    const updatedComment = await prisma.comment.update({
+    await prisma.comment.update({
       where: { id: commentId },
       data: { likeCount: { decrement: 1 } },
     });
-    return { likeCount: updatedComment.likeCount, liked: false };
+    return { liked: false, likeCount: (await prisma.comment.findUnique({ where: { id: commentId } }))!.likeCount };
   } else {
-    // ijad like
     await prisma.commentLike.create({
-      data: {
-        userId,
-        commentId,
-      },
+      data: { userId, commentId },
     });
-    const updatedComment = await prisma.comment.update({
+    await prisma.comment.update({
       where: { id: commentId },
       data: { likeCount: { increment: 1 } },
     });
-    return { likeCount: updatedComment.likeCount, liked: true };
+    return { liked: true, likeCount: (await prisma.comment.findUnique({ where: { id: commentId } }))!.likeCount };
   }
 }
 
-// gereftan comment haye post ba safhe bandi
-export async function getPostComments(
-  postId: string,
-  page: number = 1,
-  limit: number = 10
-): Promise<{ comments: CommentResponse[]; total: number; page: number; limit: number }> {
-  // baresi vojood post
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-  });
-  if (!post) throw new Error('پست یافت نشد');
-
-  // shomaresh comment ha
-  const total = await prisma.comment.count({
-    where: { postId, parentId: null }, // faghat comment haye asli (na reply)
-  });
-
-  // gereftan comment haye asli ba reply haye too dar too
-  const comments = await prisma.comment.findMany({
-    where: { postId, parentId: null }, // faghat comment haye asli
-    skip: (page - 1) * limit,
-    take: limit,
-    orderBy: { createdAt: 'desc' },
-    include: {
-      user: {
-        select: {
-          id: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-          avatar: true,
-        },
-      },
-      replies: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              firstname: true,
-              lastname: true,
-              avatar: true,
-            },
+export async function getPostComments(postId: string, page: number, limit: number): Promise<{
+  comments: CommentResponse[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const skip = (page - 1) * limit;
+  const [comments, total] = await Promise.all([
+    prisma.comment.findMany({
+      where: { postId, parentId: null },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            firstname: true,
+            lastname: true,
+            avatar: true,
           },
-          replies: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  username: true,
-                  firstname: true,
-                  lastname: true,
-                  avatar: true,
-                },
+        },
+        replies: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                firstname: true,
+                lastname: true,
+                avatar: true,
               },
-              replies: true, // reply haye too dar too (mitone ta har omghi ke lazem bashe edame dashte bashe)
+            },
+            replies: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    username: true,
+                    firstname: true,
+                    lastname: true,
+                    avatar: true,
+                  },
+                },
+                replies: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.comment.count({ where: { postId, parentId: null } }),
+  ]);
 
-  // tabdil be format CommentResponse
   const formattedComments: CommentResponse[] = comments.map((comment) => ({
     id: comment.id,
     content: comment.content,
@@ -240,7 +209,7 @@ export async function getPostComments(
         user: nestedReply.user,
         postId: nestedReply.postId,
         likeCount: nestedReply.likeCount,
-        replies: [], // mitone inja ham recursive bashe agar omgh bishtar mikhay
+        replies: [],
       })),
     })),
   }));

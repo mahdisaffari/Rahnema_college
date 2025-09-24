@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { SearchPostsQuery, SearchPostsResponse } from './searchByPost.types';
 import { extractHashtags } from '../../../../utils/validators';
+import { isBlocked } from '../../../../utils/blockUtils';
 
 type PostWithIncludes = Prisma.PostGetPayload<{
   include: {
@@ -102,7 +103,16 @@ export class SearchByPostService {
                 }),
             ]);
 
-            const formattedPosts = posts.map((post) => ({
+            const filteredPosts = [];
+            for (const post of posts) {
+              if (viewerId && !(await isBlocked(viewerId, post.user.id))) {
+                filteredPosts.push(post);
+              } else if (!viewerId) {
+                filteredPosts.push(post);
+              }
+            }
+
+            const formattedPosts = filteredPosts.map((post) => ({
                 id: post.id,
                 images: post.images.map((img: { url: string }) => img.url),  
                 likeCount: post._count.likes,
@@ -116,8 +126,8 @@ export class SearchByPostService {
                     pagination: {
                         page,
                         limit,
-                        total_records: total,
-                        total_pages: Math.ceil(total / limit),
+                        total_records: filteredPosts.length, 
+                        total_pages: Math.ceil(filteredPosts.length / limit),
                     },
                 },
                 message: 'جستجو با موفقیت انجام شد',

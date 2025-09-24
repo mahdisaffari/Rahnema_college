@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { FollowerFollowingResponse } from './followersFollowings.types';
+import { isBlocked } from '../../../utils/blockUtils';
 
 const prisma = new PrismaClient();
 
@@ -13,9 +14,17 @@ export async function getFollowers(userId: string): Promise<FollowerFollowingRes
                     avatar: true,
                 },
             },
+            followerId: true,
         },
     });
-    return followers.map(f => f.follower);
+
+    const filteredFollowers = [];
+    for (const f of followers) {
+      if (!(await isBlocked(userId, f.followerId))) {
+        filteredFollowers.push(f.follower);
+      }
+    }
+    return filteredFollowers;
 }
 
 export async function getFollowings(userId: string): Promise<FollowerFollowingResponse[]> {
@@ -28,7 +37,15 @@ export async function getFollowings(userId: string): Promise<FollowerFollowingRe
                     avatar: true,
                 },
             },
+            followingId: true,
         },
     });
-    return followings.map(f => f.following);
+
+    const filteredFollowings = [];
+    for (const f of followings) {
+      if (!(await isBlocked(userId, f.followingId))) {
+        filteredFollowings.push(f.following);
+      }
+    }
+    return filteredFollowings;
 }

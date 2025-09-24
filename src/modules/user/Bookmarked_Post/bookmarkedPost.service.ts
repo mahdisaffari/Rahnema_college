@@ -1,4 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
+import { isBlocked } from '../../../utils/blockUtils';
 
 const prisma = new PrismaClient();
 
@@ -13,7 +14,7 @@ export async function getUserBookmarkedPosts(
   const [bookmarks, totalCount] = await Promise.all([
     prisma.bookmark.findMany({
       where: { userId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       skip,
       take,
       select: {
@@ -37,10 +38,17 @@ export async function getUserBookmarkedPosts(
         },
       },
     }),
-    prisma.bookmark.count({ where: { userId } }),
+    prisma.mention.count({ where: { userId } }),
   ]);
 
-  const items = bookmarks.map((b) => ({
+  const filteredBookmarks = [];
+  for (const bookmark of bookmarks) {
+    if (!(await isBlocked(userId, bookmark.post.user.id))) {
+      filteredBookmarks.push(bookmark);
+    }
+  }
+
+  const items = filteredBookmarks.map((b) => ({
     bookmarkId: b.id,
     createdAt: b.createdAt.toISOString(),
     post: {

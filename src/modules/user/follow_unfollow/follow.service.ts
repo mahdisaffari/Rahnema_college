@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { isBlocked } from '../../../utils/blockUtils';
 
 const prisma = new PrismaClient();
 
@@ -10,6 +11,7 @@ export async function sendFollowRequest(followerId: string, targetUsername: stri
   if (!targetUser) throw new Error('کاربر یافت نشد');
   const targetId = targetUser.id;
   if (followerId === targetId) throw new Error('نمی‌توانید خودتان را فالو کنید');
+  if (await isBlocked(followerId, targetId)) throw new Error('نمی‌توانید این کاربر را فالو کنید (بلاک شده)');
 
   const isPrivate = targetUser.isPrivate;
   const existingFollow = await prisma.follow.findUnique({
@@ -36,9 +38,7 @@ export async function sendFollowRequest(followerId: string, targetUsername: stri
       if (existingRequest.status === 'pending') throw new Error('درخواست در حال بررسی است');
       if (existingRequest.status === 'accepted') {
         // convert to follow
-        await prisma.follow.create({ data: { followerId, followingId: targetId } });
-        await prisma.followRequest.delete({ where: { id: existingRequest.id } });
-        // increment counts
+        await prisma.follow.create({ data: { followerId: followerId, followingId: targetId } });
         await prisma.user.update({ where: { id: followerId }, data: { followingCount: { increment: 1 } } });
         await prisma.user.update({ where: { id: targetId }, data: { followerCount: { increment: 1 } } });
         return { requestSent: true, status: 'accepted' };
@@ -56,6 +56,7 @@ export async function acceptFollowRequest(requestId: string, targetId: string): 
   await prisma.$transaction(async (tx) => {
     const request = await tx.followRequest.findUnique({ where: { id: requestId } });
     if (!request || request.targetId !== targetId || request.status !== 'pending') throw new Error('درخواست نامعتبر');
+    if (await isBlocked(request.requesterId, targetId)) throw new Error('نمی‌توانید این درخواست را بپذیرید (بلاک شده)');
 
     await tx.followRequest.update({ where: { id: requestId }, data: { status: 'accepted' } });
     await tx.follow.create({ data: { followerId: request.requesterId, followingId: targetId } });
@@ -71,11 +72,19 @@ export async function rejectFollowRequest(requestId: string, targetId: string): 
 }
 
 export async function getPendingFollowRequests(targetId: string): Promise<{ id: string; requester: { id: string; username: string; avatar?: string | null } }[]> {
-  return prisma.followRequest.findMany({
+  const requests = await prisma.followRequest.findMany({
     where: { targetId, status: 'pending' },
     select: {
       id: true,
       requester: { select: { id: true, username: true, avatar: true } },
     },
   });
+
+  const filteredRequests = [];
+  for (const req of requests) {
+    if (!(await isBlocked(targetId, req.requester.id))) {
+      filteredRequests.push(req);
+    }
+  }
+  return filteredRequests;
 }

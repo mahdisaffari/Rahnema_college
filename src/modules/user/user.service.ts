@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { minioClient, bucketName } from '../../config/minio.config';
 import { Readable } from 'stream';
 import { env } from '../../config/env';
+import { isBlocked } from '../../utils/blockUtils';
 
 const prisma = new PrismaClient();
 
@@ -56,6 +57,23 @@ export async function getUserByUsername(username: string, currentUserId: string)
   });
 
   if (!user) return null;
+
+  if (currentUserId && await isBlocked(currentUserId, user.id)) {
+    return {
+      id: user.id,
+      username: user.username,
+      firstname: null,
+      lastname: null,
+      bio: null,
+      avatar: null,
+      postCount: 0,
+      followerCount: 0,
+      followingCount: 0,
+      isPrivate: user.isPrivate,
+      isFollowedByMe: false,
+      isFollowingMe: false,
+    };
+  }
 
   if (user.isPrivate && currentUserId && user.id !== currentUserId) {
     const isFollower = await prisma.follow.findFirst({

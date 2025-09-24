@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { isBlocked } from "../../../../utils/blockUtils";
 
 const prisma = new PrismaClient();
 
@@ -14,11 +15,37 @@ export async function blockUser(blockerId: string, targetUsername: string): Prom
     return { blocked: true };
   }
 
-  await prisma.block.create({ data: { blockerId, blockedId } });
+  await prisma.$transaction(async (tx) => {
+    await tx.block.create({ data: { blockerId, blockedId } });
 
-  // optional: clean relationships (follow, requests) between users
-  await prisma.follow.deleteMany({ where: { OR: [ { followerId: blockerId, followingId: blockedId }, { followerId: blockedId, followingId: blockerId } ] } });
-  await prisma.followRequest.deleteMany({ where: { OR: [ { requesterId: blockerId, targetId: blockedId }, { requesterId: blockedId, targetId: blockerId } ] } });
+    // Delete follow relationships
+    const deletedFollows = await tx.follow.deleteMany({ 
+      where: { OR: [ 
+        { followerId: blockerId, followingId: blockedId }, 
+        { followerId: blockedId, followingId: blockerId } 
+      ] } 
+    });
+
+    // Update follower/following counts
+    if (deletedFollows.count > 0) {
+      if (await tx.follow.findFirst({ where: { followerId: blockerId, followingId: blockedId } })) {
+        await tx.user.update({ where: { id: blockerId }, data: { followingCount: { decrement: 1 } } });
+        await tx.user.update({ where: { id: blockedId }, data: { followerCount: { decrement: 1 } } });
+      }
+      if (await tx.follow.findFirst({ where: { followerId: blockedId, followingId: blockerId } })) {
+        await tx.user.update({ where: { id: blockedId }, data: { followingCount: { decrement: 1 } } });
+        await tx.user.update({ where: { id: blockerId }, data: { followerCount: { decrement: 1 } } });
+      }
+    }
+
+    // Clean follow requests
+    await tx.followRequest.deleteMany({ 
+      where: { OR: [ 
+        { requesterId: blockerId, targetId: blockedId }, 
+        { requesterId: blockedId, targetId: blockerId } 
+      ] } 
+    });
+  });
 
   return { blocked: true };
 }
@@ -46,5 +73,3 @@ export async function getBlockedUsers(blockerId: string): Promise<{ id: string; 
 
   return blocks.map(b => ({ id: b.blocked.id, username: b.blocked.username, avatar: b.blocked.avatar }));
 }
-
-
