@@ -36,7 +36,7 @@ export const login = async (identifier: string, password: string, rememberMe: bo
     ? await prisma.user.findUnique({ where: { email: normEmail(identifier) } })
     : await prisma.user.findUnique({ where: { username: identifier.trim() } });
   if (!user) throw new Error("اعتبارنامه‌های نامعتبر");
-  if (!user.isVerified) throw new Error("ایمیل تأیید نشده");
+  //if (!user.isVerified) throw new Error("ایمیل تأیید نشده");
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) throw new Error("اعتبارنامه‌های نامعتبر");
   const access = signAccessToken({ id: user.id, username: user.username, email: user.email } as AuthUser);
