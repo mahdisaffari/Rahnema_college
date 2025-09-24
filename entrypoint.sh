@@ -25,6 +25,7 @@ echo "✅ PostgreSQL is ready."
 # اجرای migrate
 echo "🗄️  Running database migrations..."
 npx prisma migrate deploy
+npx prisma migrate dev --name add_isPrivate
 
 # اجرای اپ
 echo "🎯 Starting backend..."
