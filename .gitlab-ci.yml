@@ -30,7 +30,7 @@ deploy-to-server:
       # 3) Upload the CI .env (from File variable $ENV_FILE) to server
       # GitLab exposes File variables as paths; $ENV_FILE contains the file path.
       scp -i ~/.ssh/id_rsa -P "${SSH_PORT_SERVER:-22}" -o StrictHostKeyChecking=no \
-        "$ENV_FILE" "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/.env"
+        "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/.env"
 
       # 4) Build & run container using that .env
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
