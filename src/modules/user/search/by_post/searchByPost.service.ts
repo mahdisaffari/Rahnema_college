@@ -1,11 +1,20 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { SearchPostsQuery, SearchPostsResponse } from './searchByPost.types';
 import { extractHashtags } from '../../../../utils/validators';
+import { isBlocked } from '../../../../utils/blockUtils';
+
+type PostWithIncludes = Prisma.PostGetPayload<{
+  include: {
+    images: { select: { url: true } };
+    user: { select: { id: true; username: true; avatar: true } };
+    _count: { select: { likes: true } };
+  };
+}>;
 
 const prisma = new PrismaClient();
 
 export class SearchByPostService {
-    async searchPostsByHashtag({ q, page, limit }: SearchPostsQuery): Promise<SearchPostsResponse> {
+    async searchPostsByHashtag({ q, page, limit, viewerId }: SearchPostsQuery & { viewerId?: string }): Promise<SearchPostsResponse> {
         try {
             const hashtags = extractHashtags(q);
             if (!hashtags.length) {
@@ -14,32 +23,70 @@ export class SearchByPostService {
 
             const skip = (page - 1) * limit;
 
-            const [posts, total] = await Promise.all([
-                prisma.post.findMany({
-                    where: {
-                        hashtags: {
-                            some: {
-                                hashtag: {
-                                    name: { in: hashtags.map(h => h.toLowerCase()) },
-                                },
-                            },
+            const baseWhere: Prisma.PostWhereInput = {
+                hashtags: {
+                    some: {
+                        hashtag: {
+                            name: { in: hashtags.map(h => h.toLowerCase()) },
                         },
                     },
-                    select: {
-                        id: true,
+                },
+            };
+
+            const privacyOr: Prisma.PostWhereInput['OR'] = [
+                { user: { isPrivate: false } },
+                { userId: viewerId },
+            ];
+            if (viewerId) {
+                privacyOr.push({
+                    user: { 
+                        followers: { 
+                            some: { followerId: viewerId } 
+                        } 
+                    }
+                });
+            }
+            baseWhere.OR = privacyOr;
+
+            if (viewerId) {
+                baseWhere.AND = {
+                    OR: [
+                        { isCloseFriendsOnly: false },
+                        { 
+                            AND: [
+                                { isCloseFriendsOnly: true },
+                                { userId: viewerId }
+                            ]
+                        },
+                        { 
+                            AND: [
+                                { isCloseFriendsOnly: true },
+                                { user: { closeFriendsSent: { some: { friendId: viewerId } } } }  
+                            ]
+                        },
+                    ],
+                };
+            } else {
+                baseWhere.isCloseFriendsOnly = false;
+            }
+
+            const [posts, total] = await Promise.all([
+                prisma.post.findMany({
+                    where: baseWhere,
+                    include: {
                         images: {
                             select: { url: true },
-                        },
-                        _count: {
-                            select: {
-                                likes: true,
-                            },
                         },
                         user: {
                             select: {
                                 id: true,
                                 username: true,
                                 avatar: true,
+                            },
+                        },
+                        _count: {
+                            select: {
+                                likes: true,
                             },
                         },
                     },
@@ -50,23 +97,24 @@ export class SearchByPostService {
                     },
                     skip,
                     take: limit,
-                }),
+                }) as Promise<PostWithIncludes[]>, 
                 prisma.post.count({
-                    where: {
-                        hashtags: {
-                            some: {
-                                hashtag: {
-                                    name: { in: hashtags.map(h => h.toLowerCase()) },
-                                },
-                            },
-                        },
-                    },
+                    where: baseWhere,
                 }),
             ]);
 
-            const formattedPosts = posts.map((post) => ({
+            const filteredPosts = [];
+            for (const post of posts) {
+              if (viewerId && !(await isBlocked(viewerId, post.user.id))) {
+                filteredPosts.push(post);
+              } else if (!viewerId) {
+                filteredPosts.push(post);
+              }
+            }
+
+            const formattedPosts = filteredPosts.map((post) => ({
                 id: post.id,
-                images: post.images.map((img) => img.url),
+                images: post.images.map((img: { url: string }) => img.url),  
                 likeCount: post._count.likes,
                 user: post.user,
             }));
@@ -78,8 +126,8 @@ export class SearchByPostService {
                     pagination: {
                         page,
                         limit,
-                        total_records: total,
-                        total_pages: Math.ceil(total / limit),
+                        total_records: filteredPosts.length, 
+                        total_pages: Math.ceil(filteredPosts.length / limit),
                     },
                 },
                 message: 'جستجو با موفقیت انجام شد',

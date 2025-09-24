@@ -47,7 +47,6 @@ export async function validateSearchPosts(data: {
 
 export const CreatePostSchema = z.object({
   caption: z.string().max(300, "کپشن باید حداکثر ۳۰۰ کاراکتر باشد").optional(),
-
   images: z
     .array(
       z.object({
@@ -61,12 +60,29 @@ export const CreatePostSchema = z.object({
     )
     .max(5, "حداکثر ۵ تصویر")
     .min(1, "حداقل یک تصویر الزامی است"),
-
-  mentions: z
-    .array(z.string().min(1, "نام کاربری الزامی است"))
-    .optional()
-    .default([]),
+  mentions: z.array(z.string().min(1, "نام کاربری الزامی است")).optional().default([]),
+  isCloseFriendsOnly: z.boolean().default(false), 
 });
+
+export const CloseFriendSchema = z.object({
+  username: z.string().min(1, "نام کاربری الزامی است"),
+});
+
+export async function validateCloseFriend(data: { username: string }): Promise<{ username?: string | null }> {
+  try {
+    CloseFriendSchema.parse(data);
+    const user = await prisma.user.findUnique({ where: { username: data.username } });
+    if (!user) {
+      return { username: `کاربر با نام کاربری ${data.username} یافت نشد` };
+    }
+    return { username: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return { username: error.issues[0].message };
+    }
+    return { username: "خطا در اعتبارسنجی" };
+  }
+}
 
 export function extractMentions(caption: string): string[] {
   const mentionRegex = /@(\w+)/g;

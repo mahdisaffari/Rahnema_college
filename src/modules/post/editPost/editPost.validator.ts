@@ -21,16 +21,30 @@ export const EditPostSchema = z.object({
     .optional(),
   removeImageIds: z.array(z.string().uuid()).optional(),
   mentions: z.array(z.string()).optional(),
+  isCloseFriendsOnly: z.boolean().optional(), 
 });
 
-export const validateAll = async (data: { caption?: string; images?: Express.Multer.File[]; removeImageIds?: string[]; mentions?: string[] })
-: Promise<{ images?: string | null; caption?: string | null; mentions?: string | null; removeImageIds?: string | null; hashtags?: string | null }> => {
+export const validateAll = async (data: {
+  caption?: string;
+  images?: Express.Multer.File[];
+  removeImageIds?: string[];
+  mentions?: string[];
+  isCloseFriendsOnly?: boolean;
+}): Promise<{
+  images?: string | null;
+  caption?: string | null;
+  mentions?: string | null;
+  removeImageIds?: string | null;
+  hashtags?: string | null;
+  isCloseFriendsOnly?: string | null;
+}> => {
   const errors = {
     images: validateImages({ images: data.images }),
     caption: validateCaption({ caption: data.caption }),
     mentions: await validateMentions(data.mentions || []),
     hashtags: await validateHashtags(extractHashtags(data.caption || "")),
     removeImageIds: validateRemoveImageIds({ removeImageIds: data.removeImageIds }),
+    isCloseFriendsOnly: validateIsCloseFriendsOnly({ isCloseFriendsOnly: data.isCloseFriendsOnly }),
   };
   return errors;
 };
@@ -77,5 +91,14 @@ function validateRemoveImageIds(data: { removeImageIds?: string[] }): string | n
     return null;
   } catch (error) {
     return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی ID تصاویر برای حذف";
+  }
+}
+
+function validateIsCloseFriendsOnly(data: { isCloseFriendsOnly?: boolean }): string | null {
+  try {
+    EditPostSchema.pick({ isCloseFriendsOnly: true }).parse(data);
+    return null;
+  } catch (error) {
+    return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی isCloseFriendsOnly";
   }
 }

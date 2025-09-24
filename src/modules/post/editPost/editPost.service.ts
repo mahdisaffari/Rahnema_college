@@ -14,7 +14,8 @@ export async function editPost(
   caption: string | undefined,
   images: Express.Multer.File[] | undefined,
   removeImageIds: string[] | undefined,
-  mentions: string[] | undefined
+  mentions: string[] | undefined,
+  isCloseFriendsOnly: boolean | undefined
 ): Promise<PostResponse> {
   // baresi vojood post va malekiyat
   const post = await prisma.post.findUnique({
@@ -54,25 +55,34 @@ export async function editPost(
   if (mentions && mentions.length > 0) {
     const users = await prisma.user.findMany({
       where: { username: { in: mentions } },
-      select: { id: true },
+      select: { id: true, username: true },
     });
-    await prisma.mention.createMany({
-      data: users.map((user) => ({ postId, userId: user.id })),
-    });
+    const validMentions = users.map((u) => ({ postId, userId: u.id }));
+    await prisma.mention.createMany({ data: validMentions });
   }
 
-  // hazf hashtag haye ghabli va ijad hashtag haye jadid
-  const hashtags = caption ? extractHashtags(caption) : [];
+  // update hashtag ha
   await prisma.postHashtag.deleteMany({ where: { postId } });
+  const hashtags = caption ? extractHashtags(caption) : [];
   if (hashtags.length > 0) {
-    const hashtagRecords = await prisma.hashtag.findMany({
+    const existingHashtags = await prisma.hashtag.findMany({
+      where: { name: { in: hashtags } },
+      select: { id: true, name: true },
+    });
+    const existingHashtagNames = existingHashtags.map((h) => h.name);
+    const newHashtags = hashtags.filter((h) => !existingHashtagNames.includes(h));
+    await prisma.hashtag.createMany({
+      data: newHashtags.map((name) => ({ name })),
+      skipDuplicates: true,
+    });
+    const updatedHashtagRecords = await prisma.hashtag.findMany({
       where: { name: { in: hashtags } },
       select: { id: true, name: true },
     });
     await prisma.postHashtag.createMany({
       data: hashtags.map((hashtag) => ({
         postId,
-        hashtagId: hashtagRecords.find((h) => h.name === hashtag)!.id,
+        hashtagId: updatedHashtagRecords.find((h) => h.name === hashtag)!.id,
       })),
     });
   }
@@ -82,6 +92,7 @@ export async function editPost(
     where: { id: postId },
     data: {
       caption: caption ?? post.caption,
+      isCloseFriendsOnly: isCloseFriendsOnly ?? post.isCloseFriendsOnly,
       images: { create: newImages },
     },
     include: {
@@ -101,6 +112,8 @@ export async function editPost(
       hashtags: {
         include: { hashtag: { select: { name: true } } },
       },
+      likes: { where: { userId }, select: { id: true } }, 
+      bookmarks: { where: { userId }, select: { id: true } }, 
     },
   });
 
@@ -111,10 +124,19 @@ export async function editPost(
     createdAt: updatedPost.createdAt.toISOString(),
     likeCount: updatedPost.likeCount,
     bookmarkCount: updatedPost.bookmarkCount,
-    commentCount: updatedPost.commentCount, // afzodan commentCount be response
-    user: updatedPost.user,
+    commentCount: updatedPost.commentCount,
+    user: {
+      id: updatedPost.user.id,
+      username: updatedPost.user.username,
+      firstname: updatedPost.user.firstname,
+      lastname: updatedPost.user.lastname,
+      avatar: updatedPost.user.avatar,
+    },
     isOwner: true,
+    isLiked: updatedPost.likes.length > 0,
+    isBookmarked: updatedPost.bookmarks.length > 0,
     mentions: updatedPost.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
     hashtags: updatedPost.hashtags.map((h) => h.hashtag.name),
+    isCloseFriendsOnly: updatedPost.isCloseFriendsOnly,
   };
 }

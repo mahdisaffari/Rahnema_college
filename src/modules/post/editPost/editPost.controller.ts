@@ -8,10 +8,10 @@ export async function editPostHandler(req: AuthRequest, res: Response<EditPostRe
   try {
     const userId = req.user!.id;
     const postId = req.params.id;
-    const { caption, removeImageIds, mentions } = req.body as EditPostRequest;
+    const { caption, removeImageIds, mentions, isCloseFriendsOnly } = req.body as EditPostRequest & { isCloseFriendsOnly?: boolean };
     const images = (req.files as Express.Multer.File[]) || [];
 
-    const updatedPost = await editPost(postId, userId, caption, images, removeImageIds, mentions);
+    const updatedPost = await editPost(postId, userId, caption, images, removeImageIds, mentions, isCloseFriendsOnly);
     return res.json({
       success: true,
       message: 'پست با موفقیت ویرایش شد',

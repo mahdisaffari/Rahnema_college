@@ -1,20 +1,45 @@
-
 import { z } from "zod";
 import { RegisterSchema, LoginSchema } from "../../utils/validators";
-import { LoginRequest, RegisterRequest } from "./auth.types";
+import { LoginRequest, RegisterRequest, ForgotPasswordRequest, ResetPasswordRequest } from "./auth.types";
 
 export const validateRegister = ({ username, email, password }: RegisterRequest): string | null => {
   try {
-    const a = RegisterSchema.parse({ username, email, password });
+    RegisterSchema.parse({ username, email, password });
     return null;
   } catch (error) {
     return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";
   }
 };
 
-export const validateLogin = ({ identifier, password }: LoginRequest): string | null => {
+export const validateLogin = ({ identifier, password, rememberMe }: LoginRequest): string | null => {
   try {
     LoginSchema.parse({ identifier, password });
+    if (rememberMe !== undefined && typeof rememberMe !== 'boolean') {
+      throw new Error("rememberMe باید بولین باشد");
+    }
+    return null;
+  } catch (error) {
+    return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";
+  }
+};
+
+export const validateForgotPassword = ({ email }: ForgotPasswordRequest): string | null => {
+  try {
+    z.object({
+      email: z.string().email("ایمیل معتبر نیست").min(1, "ایمیل الزامی است"),
+    }).parse({ email });
+    return null;
+  } catch (error) {
+    return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";
+  }
+};
+
+export const validateResetPassword = ({ token, newPassword }: ResetPasswordRequest): string | null => {
+  try {
+    z.object({
+      token: z.string().min(1, "توکن الزامی است"),
+      newPassword: RegisterSchema.shape.password, 
+    }).parse({ token, newPassword });
     return null;
   } catch (error) {
     return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";

@@ -1,19 +1,16 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from '@prisma/client';
+import { isBlocked } from '../../../utils/blockUtils';
 
 const prisma = new PrismaClient();
 
-export async function getUserMentionedPosts(
-  userId: string,
-  page: number,
-  pageSize: number = 9
-) {
+export async function getUserMentionedPosts(userId: string, page: number, pageSize: number = 9) {
   const skip = Math.max(0, (page - 1) * pageSize);
   const take = pageSize;
 
   const [mentions, totalCount] = await Promise.all([
     prisma.mention.findMany({
       where: { userId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
       skip,
       take,
       select: {
@@ -40,7 +37,14 @@ export async function getUserMentionedPosts(
     prisma.mention.count({ where: { userId } }),
   ]);
 
-  const items = mentions.map((m) => ({
+  const filteredMentions = [];
+  for (const mention of mentions) {
+    if (!(await isBlocked(userId, mention.post.user.id))) {
+      filteredMentions.push(mention);
+    }
+  }
+
+  const items = filteredMentions.map((m) => ({
     mentionId: m.id,
     createdAt: m.createdAt.toISOString(),
     post: {

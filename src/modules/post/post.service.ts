@@ -26,7 +26,8 @@ export async function createPostWithImages(
   userId: string,
   caption: string | undefined,
   images: Express.Multer.File[],
-  mentions: string[] | undefined
+  mentions: string[] | undefined,
+  isCloseFriendsOnly: boolean = false
 ): Promise<PostResponse> {
   if (!images || images.length === 0) throw new Error('No images provided');
 
@@ -39,6 +40,7 @@ export async function createPostWithImages(
   const created = await prisma.post.create({
     data: {
       caption: caption ?? null,
+      isCloseFriendsOnly,
       userId,
       images: {
         create: uploadedUrls.map((url) => ({ url })),
@@ -60,7 +62,7 @@ export async function createPostWithImages(
   if (mentions && mentions.length > 0) {
     const users = await prisma.user.findMany({
       where: { username: { in: mentions } },
-      select: { id: true },
+      select: { id: true, username: true },
     });
     await prisma.mention.createMany({
       data: users.map((user) => ({ postId: created.id, userId: user.id })),
@@ -72,53 +74,67 @@ export async function createPostWithImages(
       where: { name: { in: hashtags } },
       select: { id: true, name: true },
     });
+    const missingHashtags = hashtags.filter((h) => !hashtagRecords.some((hr) => hr.name === h));
+    if (missingHashtags.length > 0) {
+      await prisma.hashtag.createMany({
+        data: missingHashtags.map((name) => ({ name })),
+      });
+    }
+    const updatedHashtagRecords = await prisma.hashtag.findMany({
+      where: { name: { in: hashtags } },
+      select: { id: true, name: true },
+    });
     await prisma.postHashtag.createMany({
       data: hashtags.map((hashtag) => ({
         postId: created.id,
-        hashtagId: hashtagRecords.find((h) => h.name === hashtag)!.id,
+        hashtagId: updatedHashtagRecords.find((h) => h.name === hashtag)!.id,
       })),
     });
   }
 
-  const mentionUsers = await prisma.mention.findMany({
-    where: { postId: created.id },
-    include: { user: { select: { id: true, username: true } } },
+  const postWithDetails = await prisma.post.findUnique({
+    where: { id: created.id },
+    include: {
+      images: true,
+      user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
+      mentions: { include: { user: { select: { id: true, username: true } } } },
+      hashtags: { include: { hashtag: { select: { name: true } } } },
+      likes: { select: { id: true } },
+      bookmarks: { select: { id: true } },
+    },
   });
 
   return {
-    id: created.id,
-    caption: created.caption,
-    images: created.images.map((img) => ({ id: img.id, url: img.url })),
-    createdAt: created.createdAt.toISOString(),
-    likeCount: created.likeCount || 0,
-    bookmarkCount: created.bookmarkCount || 0,
-    commentCount: created.commentCount || 0,
-    user: created.user,
+    id: postWithDetails!.id,
+    caption: postWithDetails!.caption,
+    images: postWithDetails!.images.map((img) => ({ id: img.id, url: img.url })),
+    createdAt: postWithDetails!.createdAt.toISOString(),
+    likeCount: postWithDetails!.likeCount,
+    bookmarkCount: postWithDetails!.bookmarkCount,
+    commentCount: postWithDetails!.commentCount,
+    user: {
+      id: postWithDetails!.user.id,
+      username: postWithDetails!.user.username,
+      firstname: postWithDetails!.user.firstname,
+      lastname: postWithDetails!.user.lastname,
+      avatar: postWithDetails!.user.avatar,
+    },
     isOwner: true,
-    mentions: mentionUsers.map((m) => ({ userId: m.userId, username: m.user.username })),
-    hashtags: created.hashtags.map((h: { hashtag: { name: string } }) => h.hashtag.name),
+    isLiked: false,
+    isBookmarked: false,
+    mentions: postWithDetails!.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
+    hashtags: postWithDetails!.hashtags.map((h) => h.hashtag.name),
+    isCloseFriendsOnly: postWithDetails!.isCloseFriendsOnly,
   };
 }
 
 export async function getPostById(postId: string, currentUserId?: string): Promise<PostResponse | null> {
   const post = await prisma.post.findUnique({
     where: { id: postId },
-    select: {
-      id: true,
-      caption: true,
-      images: { select: { id: true, url: true } },
-      createdAt: true,
-      likeCount: true,
-      bookmarkCount: true,
-      commentCount: true,
+    include: {
+      images: true,
       user: {
-        select: {
-          id: true,
-          username: true,
-          firstname: true,
-          lastname: true,
-          avatar: true,
-        },
+        select: { id: true, username: true, firstname: true, lastname: true, avatar: true },
       },
       mentions: {
         include: { user: { select: { id: true, username: true } } },
@@ -140,29 +156,38 @@ export async function getPostById(postId: string, currentUserId?: string): Promi
         : false,
     },
   });
+
   if (!post) return null;
+
   return {
     id: post.id,
     caption: post.caption,
-    images: post.images,
+    images: post.images.map((img) => ({ id: img.id, url: img.url })),
     createdAt: post.createdAt.toISOString(),
     likeCount: post.likeCount,
     bookmarkCount: post.bookmarkCount,
     commentCount: post.commentCount,
-    user: post.user,
-    isOwner: currentUserId ? post.user.id === currentUserId : false,
+    user: {
+      id: post.user.id,
+      username: post.user.username,
+      firstname: post.user.firstname,
+      lastname: post.user.lastname,
+      avatar: post.user.avatar,
+    },
+    isOwner: currentUserId ? post.userId === currentUserId : false,
     isLiked: currentUserId ? post.likes.length > 0 : false,
     isBookmarked: currentUserId ? post.bookmarks.length > 0 : false,
     mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
-    hashtags: post.hashtags.map((h: { hashtag: { name: string } }) => h.hashtag.name),
+    hashtags: post.hashtags.map((h) => h.hashtag.name),
+    isCloseFriendsOnly: post.isCloseFriendsOnly,
   };
 }
 
 export async function getUserPosts(
   username: string,
-  currentUserId?: string,
-  page: number = 1,
-  limit: number = 10
+  currentUserId: string | undefined,
+  page: number,
+  limit: number
 ): Promise<UserPostsResponse['data'] | null> {
   const user = await prisma.user.findUnique({
     where: { username },
@@ -172,6 +197,7 @@ export async function getUserPosts(
       firstname: true,
       lastname: true,
       avatar: true,
+      postCount: true,
       posts: {
         skip: (page - 1) * limit,
         take: limit,
@@ -190,6 +216,7 @@ export async function getUserPosts(
           hashtags: {
             include: { hashtag: { select: { name: true } } },
           },
+          isCloseFriendsOnly: true,
           likes: currentUserId
             ? {
                 where: { userId: currentUserId },
@@ -237,6 +264,8 @@ export async function getUserPosts(
       isBookmarked: currentUserId ? post.bookmarks.length > 0 : false,
       mentions: post.mentions.map((m) => ({ userId: m.userId, username: m.user.username })),
       hashtags: post.hashtags.map((h: { hashtag: { name: string } }) => h.hashtag.name),
+      isCloseFriendsOnly: post.isCloseFriendsOnly,
     })),
+    total: user.postCount,
   };
 }

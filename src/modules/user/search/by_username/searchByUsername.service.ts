@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { UserResponse } from "../../user.types";
+import { isBlocked } from "../../../../utils/blockUtils";
 
 const prisma = new PrismaClient();
 
@@ -27,6 +28,7 @@ export async function searchByUsername(
         postCount: true,
         followerCount: true,
         followingCount: true,
+        isPrivate: true, 
         following: {
           select: { followerId: true },
           where: { followerId: currentUserId },
@@ -50,11 +52,18 @@ export async function searchByUsername(
     }),
   ]);
 
-  const users: UserResponse[] = usersData.map(user => ({
+  const filteredUsersData = [];
+  for (const user of usersData) {
+    if (!(await isBlocked(currentUserId, user.id))) {
+      filteredUsersData.push(user);
+    }
+  }
+
+  const users: UserResponse[] = filteredUsersData.map(user => ({
     ...user,
     isFollowedByMe: user.following.length > 0,
     isFollowingMe: user.followers.length > 0,
   }));
 
-  return { users, total };
+  return { users, total: filteredUsersData.length }; 
 }
