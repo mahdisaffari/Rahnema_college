@@ -25,19 +25,12 @@ deploy-to-server:
       rsync -avz --delete \
         -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p ${SSH_PORT_SERVER:-22}" \
         . "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/" \
-        --exclude='.git' --exclude='node_modules' --exclude='.env'
-
-      # 3) Upload the CI .env (from File variable $ENV_FILE) to server
-      # GitLab exposes File variables as paths; $ENV_FILE contains the file path.
-      scp -i ~/.ssh/id_rsa -P "${SSH_PORT_SERVER:-22}" -o StrictHostKeyChecking=no \
-        "$SSH_USER_SERVER@$SSH_HOST_SERVER:${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}/.env"
-
-      # 4) Build & run container using that .env
+        --exclude='.git' --exclude='node_modules'
+      
+      # 3. Build Docker image and run container
       ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -p "${SSH_PORT_SERVER:-22}" \
         "$SSH_USER_SERVER@$SSH_HOST_SERVER" "
-          set -euo pipefail
           cd ${DEPLOY_PATH:-/home/ubuntu/codechefs-backend}
-          chmod 600 .env
           docker build -t codechefs-backend:latest .
           docker stop codechefs-backend || true
           docker rm codechefs-backend || true
