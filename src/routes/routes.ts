@@ -24,6 +24,7 @@ import { getUserMentionedPostsHandler } from "../modules/user/Mentioned_Post/men
 import { blockUserHandler, unblockUserHandler, getBlockedUsersHandler } from "../modules/user/Blocking_user/Blocked_list/Block.controller";
 import { searchByUsernameController } from "../modules/user/search/by_username/searchByUsername.controller";
 import { getCloseFriendListHandler } from "../modules/user/closeFriendList/closeFriendList.controller";
+import { validateMentionedPostsMiddleware } from "../modules/user/Mentioned_Post/mentionedPost.middleware";
 
 const router = Router();
 const searchByPostController = new SearchByPostController();
@@ -78,8 +79,7 @@ router.get("/users/followings", auth, getFollowingsHandler);
 
 // مسیر بوکمارک‌ها و منشن‌ها
 router.get("/bookmarks", auth, validateBookmarkedPostsMiddleware, getUserBookmarkedPostsHandler);
-router.get("/mentions", auth, validateGetUserPostsMiddleware, getUserMentionedPostsHandler);
-
+router.get("/mentions", auth, validateMentionedPostsMiddleware, getUserMentionedPostsHandler);
 // مسیر هوم‌پیج
 router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
 
