@@ -22,10 +22,17 @@ until pg_isready -h 188.121.116.152 -p "${POSTGRES_PORT}" -U "${POSTGRES_USER}" 
 done
 echo "✅ PostgreSQL is ready."
 
+# ایجاد دیتابیس شَدو در صورت نبود
+echo "🔍 Checking for shadow database: ${POSTGRES_DB}_shadow"
+psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@188.121.116.152:${POSTGRES_PORT}/postgres" \
+  -tc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}_shadow'" | grep -q 1 || \
+  psql "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@188.121.116.152:${POSTGRES_PORT}/postgres" \
+    -c "CREATE DATABASE ${POSTGRES_DB}_shadow;"
+echo "✅ Shadow database ready: ${POSTGRES_DB}_shadow"
+
 # اجرای migrate
 echo "🗄️  Running database migrations..."
 npx prisma migrate deploy
-npx prisma migrate dev --name add_isPrivate
 
 # اجرای اپ
 echo "🎯 Starting backend..."
