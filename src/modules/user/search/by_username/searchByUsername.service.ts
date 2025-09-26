@@ -7,10 +7,10 @@ const prisma = new PrismaClient();
 export async function searchByUsername(
   { username, page, limit }: { username: string; page: number; limit: number },
   currentUserId: string
-): Promise<{ users: UserResponse[]; total: number }> {
+): Promise<{ users: UserResponse[]; total: number; suggestedUsernames: string[] }> {
   const skip = (page - 1) * limit;
 
-  const [usersData, total] = await Promise.all([
+  const [usersData, total, suggestedUsernames] = await Promise.all([
     prisma.user.findMany({
       where: {
         username: {
@@ -50,6 +50,18 @@ export async function searchByUsername(
         },
       },
     }),
+   
+    prisma.user.findMany({
+      where: {
+        username: {
+          startsWith: username,
+          mode: "insensitive",
+        },
+      },
+      select: { username: true },
+      take: 10, 
+      orderBy: { username: 'asc' },
+    }),
   ]);
 
   const filteredUsersData = [];
@@ -65,5 +77,9 @@ export async function searchByUsername(
     isFollowingMe: user.followers.length > 0,
   }));
 
-  return { users, total: filteredUsersData.length }; 
+  return { 
+    users, 
+    total: filteredUsersData.length,
+    suggestedUsernames: suggestedUsernames.map(u => u.username), 
+  }; 
 }

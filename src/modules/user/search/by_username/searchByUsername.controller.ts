@@ -5,13 +5,12 @@ import { SearchByUsernameResponse } from "./searchByUsername.types";
 import { AuthRequest } from "../../../auth/auth.middleware";
 import { handleError } from "../../../../utils/errorHandler";
 
-
 export async function searchByUsernameController(req: AuthRequest, res: Response<SearchByUsernameResponse>) {
   try {
     const { username, page, limit } = searchByUsernameSchema.parse(req.query);
     const currentUserId = req.user!.id;
 
-    const { users, total } = await searchByUsername({ username, page, limit }, currentUserId);
+    const { users, total, suggestedUsernames } = await searchByUsername({ username, page, limit }, currentUserId);
 
     return res.json({
       success: true,
@@ -23,6 +22,7 @@ export async function searchByUsernameController(req: AuthRequest, res: Response
           total_records: total,
           total_pages: Math.ceil(total / limit),
         },
+        suggestedUsernames, 
       },
       message: users.length ? `${users.length} کاربر یافت شد` : "کاربری یافت نشد",
     });

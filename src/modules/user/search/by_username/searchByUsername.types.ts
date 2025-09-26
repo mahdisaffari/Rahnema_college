@@ -1,6 +1,5 @@
 import { UserResponse } from "../../user.types";
 
-
 export interface SearchByUsernameQuery {
   username: string;
   page: number;
@@ -17,6 +16,7 @@ export interface SearchByUsernameResponse {
       total_records: number;
       total_pages: number;
     };
+    suggestedUsernames: string[]; 
   };
   message: string;
 }
