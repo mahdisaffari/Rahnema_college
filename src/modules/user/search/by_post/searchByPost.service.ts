@@ -27,7 +27,7 @@ export class SearchByPostService {
                 hashtags: {
                     some: {
                         hashtag: {
-                            name: { in: hashtags.map(h => h.toLowerCase()) },
+                            name: { startsWith: hashtags[0].toLowerCase() }, 
                         },
                     },
                 },
