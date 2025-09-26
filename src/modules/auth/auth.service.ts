@@ -1,4 +1,3 @@
-
 import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 import { normEmail, RegisterSchema, LoginSchema } from "../../utils/validators";
@@ -12,22 +11,33 @@ import { AuthUser } from "./auth.types";
 const prisma = new PrismaClient();
 
 export const register = async (username: string, email: string, password: string) => {
+  console.log('Register attempt:', { username, email });
   RegisterSchema.parse({ username, email, password });
+  console.log('Validation passed');
   const [byUser, byEmail] = await Promise.all([
     prisma.user.findUnique({ where: { username: username.trim() } }),
     prisma.user.findUnique({ where: { email: normEmail(email) } }),
   ]);
   if (byUser) throw new Error("نام کاربری وجود دارد");
   if (byEmail) throw new Error("ایمیل وجود دارد");
+  console.log('No duplicate user/email');
   const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
     data: { username: username.trim(), email: normEmail(email), passwordHash, isVerified: false },
   });
+  console.log('User created:', user.id);
   const token = randomUUID();
   await prisma.verificationToken.create({
     data: { userId: user.id, token, expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) },
   });
-  await sendVerificationEmail(normEmail(email), token);
+  console.log('Verification token created:', token);
+  try {
+    await sendVerificationEmail(normEmail(email), token);
+    console.log('Email sent to:', email);
+  } catch (emailError) {
+    console.error('Failed to send verification email:', emailError);
+ 
+  }
 };
 
 export const login = async (identifier: string, password: string, rememberMe: boolean = false) => {
@@ -62,7 +72,6 @@ export const refreshAccessToken = async (refreshToken: string) => {
   }
 };
 
-
 export const forgotPassword = async (email: string) => {
   const user = await prisma.user.findUnique({ where: { email: normEmail(email) } });
   if (!user) throw new Error("کاربر یافت نشد");
@@ -73,7 +82,6 @@ export const forgotPassword = async (email: string) => {
   });
   await sendPasswordResetEmail(normEmail(email), token);
 };
-
 
 export const resetPassword = async (token: string, newPassword: string) => {
   const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
