@@ -7,6 +7,7 @@ type PostWithIncludes = Prisma.PostGetPayload<{
   include: {
     images: { select: { url: true } };
     user: { select: { id: true; username: true; avatar: true } };
+    hashtags: { select: { hashtag: { select: { name: true } } } }; 
     _count: { select: { likes: true } };
   };
 }>;
@@ -27,7 +28,7 @@ export class SearchByPostService {
                 hashtags: {
                     some: {
                         hashtag: {
-                            name: { startsWith: hashtags[0].toLowerCase() }, 
+                            name: { startsWith: hashtags[0].toLowerCase() },
                         },
                     },
                 },
@@ -70,7 +71,7 @@ export class SearchByPostService {
                 baseWhere.isCloseFriendsOnly = false;
             }
 
-            const [posts, total] = await Promise.all([
+            const [posts, total, suggestedHashtags] = await Promise.all([
                 prisma.post.findMany({
                     where: baseWhere,
                     include: {
@@ -82,6 +83,13 @@ export class SearchByPostService {
                                 id: true,
                                 username: true,
                                 avatar: true,
+                            },
+                        },
+                        hashtags: {
+                            select: {
+                                hashtag: {
+                                    select: { name: true },
+                                },
                             },
                         },
                         _count: {
@@ -101,6 +109,13 @@ export class SearchByPostService {
                 prisma.post.count({
                     where: baseWhere,
                 }),
+                prisma.hashtag.findMany({
+                    where: {
+                        name: { startsWith: hashtags[0].toLowerCase() },
+                    },
+                    select: { name: true },
+                    take: 10,
+                }),
             ]);
 
             const filteredPosts = [];
@@ -116,6 +131,7 @@ export class SearchByPostService {
                 id: post.id,
                 images: post.images.map((img: { url: string }) => img.url),  
                 likeCount: post._count.likes,
+                hashtags: post.hashtags.map((h) => `#${h.hashtag.name}`), 
                 user: post.user,
             }));
 
@@ -129,6 +145,7 @@ export class SearchByPostService {
                         total_records: filteredPosts.length, 
                         total_pages: Math.ceil(filteredPosts.length / limit),
                     },
+                    suggestedHashtags: suggestedHashtags.map(h => `#${h.name}`),
                 },
                 message: 'جستجو با موفقیت انجام شد',
             };

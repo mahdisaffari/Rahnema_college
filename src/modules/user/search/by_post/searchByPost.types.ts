@@ -3,6 +3,7 @@ export interface SearchPostsQuery {
   page: number; 
   limit: number; 
 }
+
 export interface SearchPostsResponse {
   success: boolean;
   data: {
@@ -10,6 +11,7 @@ export interface SearchPostsResponse {
       id: string;
       images: string[];
       likeCount: number; 
+      hashtags: string[]; 
       user: {
         id: string;
         username: string;
@@ -22,6 +24,7 @@ export interface SearchPostsResponse {
       total_records: number;
       total_pages: number;
     };
+    suggestedHashtags: string[]; 
   };
   message: string;
 }
