@@ -4,6 +4,9 @@ import { env } from '../config/env';
 const transporter = nodemailer.createTransport({
   service: 'gmail', 
   auth: { user: env.EMAIL_USER, pass: env.EMAIL_PASS },
+  connectionTimeout: 5000, 
+  greetingTimeout: 5000,
+  socketTimeout: 5000,
 });
 
 export async function sendVerificationEmail(email: string, token: string) {
