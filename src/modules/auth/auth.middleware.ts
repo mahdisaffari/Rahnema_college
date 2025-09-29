@@ -2,40 +2,36 @@ import jwt from "jsonwebtoken";
 import { env } from "../../config/env";
 import { Request, Response, NextFunction } from "express";
 import { AuthUser } from "./auth.types";
+import { PrismaClient } from "@prisma/client";
 import rateLimit from "express-rate-limit";
 
-/**
- * baresi token jwt dar har dakhst(login) agar jwt valide 
- * data user be req dade mishe
- * 
- * che komaki mikone in = bedon in har bar bekhay befahmi user kie
- * bayad khode dasti tokeno decode koni
- */
+const prisma = new PrismaClient();
+const ACCESS_COOKIE_NAME = "access_token";
 
 export interface AuthRequest extends Request {
   user?: AuthUser;
 }
 
-const ACCESS_COOKIE_NAME = "access_token";
-
-export function auth(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies?.[ACCESS_COOKIE_NAME] as string | undefined;
+export async function auth(req: AuthRequest, res: Response, next: NextFunction) {
+  const token = req.cookies?.[ACCESS_COOKIE_NAME];
   if (!token) {
-    (req as AuthRequest).user = undefined;
-    return next();
+    return res.status(401).json({ success: false, message: "لطفاً وارد شوید" });
   }
 
   try {
     const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET) as { sub: string; username: string; email: string };
-    (req as AuthRequest).user = { id: decoded.sub, username: decoded.username, email: decoded.email };
+    const user = await prisma.user.findUnique({ where: { id: decoded.sub } });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "کاربر یافت نشد" });
+    }
+    req.user = { id: decoded.sub, username: decoded.username, email: decoded.email };
     next();
   } catch (error) {
-    (req as AuthRequest).user = undefined;
-    next();
+    return res.status(401).json({ success: false, message: "توکن نامعتبر است" });
   }
 }
 
 export const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
+  windowMs: 15 * 60 * 1000,
   message: { success: false, message: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً 15 دقیقه صبر کنید." },
 });
