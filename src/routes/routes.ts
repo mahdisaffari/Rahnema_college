@@ -74,8 +74,8 @@ router.delete("/users/:username/block", auth, validateUsernameMiddleware, unbloc
 router.get("/users/blocks", auth, getBlockedUsersHandler);
 
 // مسیرهای فالوورها و فالویینگ‌ها
-router.get("/users/followers", auth, getFollowersHandler);
-router.get("/users/followings", auth, getFollowingsHandler);
+router.get("/users/me/followers", auth, getFollowersHandler);
+router.get("/users/me/followings", auth, getFollowingsHandler);
 
 // مسیر بوکمارک‌ها و منشن‌ها
 router.get("/bookmarks", auth, validateBookmarkedPostsMiddleware, getUserBookmarkedPostsHandler);
