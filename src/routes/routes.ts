@@ -12,7 +12,7 @@ import { followUserHandler } from "../modules/user/follow_unfollow/follow.contro
 import { getPostProfileHandler } from "../modules/user/postProfile/postProfile.controller";
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
-import { getFollowersHandler, getFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
+import { getFollowersHandler, getFollowingsHandler, getUserFollowersHandler, getUserFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
 import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCommentsHandler } from "../modules/post/comment/comment.controller";
 import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments, validateCloseFriend } from "../utils/validators";
 import { getHomepageHandler } from "../modules/user/homepage/homepage.controller";
@@ -76,6 +76,8 @@ router.get("/users/blocks", auth, getBlockedUsersHandler);
 // مسیرهای فالوورها و فالویینگ‌ها
 router.get("/users/me/followers", auth, getFollowersHandler);
 router.get("/users/me/followings", auth, getFollowingsHandler);
+router.get("/users/:username/followers", auth, getUserFollowersHandler);
+router.get("/users/:username/followings", auth, getUserFollowingsHandler);
 
 // مسیر بوکمارک‌ها و منشن‌ها
 router.get("/bookmarks", auth, validateBookmarkedPostsMiddleware, getUserBookmarkedPostsHandler);
