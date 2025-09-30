@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { isBlocked } from '../../../utils/blockUtils';
+import { RemoveFollowerResponse } from './follow.types';
 
 const prisma = new PrismaClient();
 
@@ -87,4 +88,26 @@ export async function getPendingFollowRequests(targetId: string): Promise<{ id: 
     }
   }
   return filteredRequests;
+}
+
+export async function removeFollower(followingId: string, followerUsername: string): Promise<RemoveFollowerResponse['data']> {
+  const follower = await prisma.user.findUnique({
+    where: { username: followerUsername },
+    select: { id: true, username: true },
+  });
+  if (!follower) throw new Error('کاربر یافت نشد');
+  const followerId = follower.id;
+
+  const existingFollow = await prisma.follow.findUnique({
+    where: { followerId_followingId: { followerId, followingId } },
+  });
+  if (!existingFollow) throw new Error('این کاربر شما را فالو نکرده است');
+
+  await prisma.$transaction(async (tx) => {
+    await tx.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
+    await tx.user.update({ where: { id: followerId }, data: { followingCount: { decrement: 1 } } });
+    await tx.user.update({ where: { id: followingId }, data: { followerCount: { decrement: 1 } } });
+  });
+
+  return { removedFollower: { id: followerId, username: followerUsername } };
 }

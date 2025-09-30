@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../../auth/auth.middleware';
 import { handleError } from '../../../utils/errorHandler';
-import { sendFollowRequest, acceptFollowRequest, rejectFollowRequest, getPendingFollowRequests } from './follow.service';
-import { FollowRequestResponse, PendingRequestsResponse } from './follow.types';
+import { sendFollowRequest, acceptFollowRequest, rejectFollowRequest, getPendingFollowRequests, removeFollower } from './follow.service';
+import { FollowRequestResponse, PendingRequestsResponse, RemoveFollowerResponse } from './follow.types';
 
 export async function followUserHandler(req: AuthRequest, res: Response<FollowRequestResponse>) { 
   try {
@@ -56,5 +56,22 @@ export async function getPendingFollowRequestsHandler(req: AuthRequest, res: Res
     return res.json({ success: true, message: 'درخواست‌های در حال بررسی', data: requests });
   } catch (error) {
     return handleError(error, res, 'خطا در دریافت درخواست‌ها');
+  }
+}
+
+export async function removeFollowerHandler(req: AuthRequest, res: Response<RemoveFollowerResponse>) {
+  try {
+    const followingId = req.user!.id;
+    const followerUsername = req.params.username;
+    const result = await removeFollower(followingId, followerUsername);
+    return res.json({
+      success: true,
+      message: 'فالوور حذف شد',
+      data: {
+        removedFollower: result!.removedFollower,
+      },
+    });
+  } catch (error) {
+    return handleError(error, res, 'خطا در حذف فالوور');
   }
 }

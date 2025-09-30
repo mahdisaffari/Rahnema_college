@@ -8,7 +8,7 @@ import { validateAllMiddleware, validateGetUserPostsMiddleware } from "../module
 import { createSetupPostHandler, getPostHandler, getUserPostsHandler } from "../modules/post/post.controller";
 import { editPostHandler } from "../modules/post/editPost/editPost.controller"; 
 import { bookmarkPostHandler } from "../modules/post/bookmark/bookmark.controller";
-import { followUserHandler } from "../modules/user/follow_unfollow/follow.controller";
+import { followUserHandler, removeFollowerHandler } from "../modules/user/follow_unfollow/follow.controller";
 import { getPostProfileHandler } from "../modules/user/postProfile/postProfile.controller";
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
@@ -69,6 +69,7 @@ router.get("/posts/:id/comments/:commentId/replies", auth, validateGetRepliesMid
 // مسیرهای فالو/آنفالو
 router.post("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
 //router.delete("/users/:username/follow", auth, validateUsernameMiddleware, followUserHandler);
+router.delete("/users/:username/follower", auth, validateUsernameMiddleware, removeFollowerHandler);
 
 // مسیرهای بلاک
 router.post("/users/:username/block", auth, validateUsernameMiddleware, blockUserHandler);
