@@ -199,6 +199,9 @@ model Comment {
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
   Notification Notification[]
+  @@index([postId])
+  @@index([parentId])
+  @@index([createdAt])
 }
 
 model CommentLike {

@@ -16,6 +16,20 @@ type CommentWithRelations = Prisma.CommentGetPayload<{
       };
     };
     _count: { select: { replies: true } };
+    replies: {
+      include: {
+        user: {
+          select: {
+            id: true;
+            username: true;
+            firstname: true;
+            lastname: true;
+            avatar: true;
+          };
+        };
+        _count: { select: { replies: true } };
+      };
+    };
   };
 }>;
 
@@ -125,37 +139,37 @@ export async function createReply(
 
 export async function likeComment(userId: string, commentId: string): Promise<{ liked: boolean; likeCount: number }> {
   return await prisma.$transaction(async (tx) => {
-    const comment = await tx.comment.findUnique({
-      where: { id: commentId },
-      select: { post: { select: { userId: true } } },
-    });
-    if (!comment) throw new Error('کامنت یافت نشد');
-    if (await isBlocked(userId, comment.post.userId)) throw new Error('نمی‌توانید کامنت این پست را لایک کنید (بلاک شده)');
-
     const existingLike = await tx.commentLike.findUnique({
-      where: { userId_commentId: { userId, commentId } },
+      where: {
+        userId_commentId: { userId, commentId },
+      },
     });
 
     if (existingLike) {
       await tx.commentLike.delete({
-        where: { userId_commentId: { userId, commentId } },
+        where: {
+          userId_commentId: { userId, commentId },
+        },
       });
-      await tx.comment.update({
+      const newLikeCount = await tx.comment.update({
         where: { id: commentId },
         data: { likeCount: { decrement: 1 } },
+        select: { likeCount: true },
       });
-      const updatedComment = await tx.comment.findUnique({ where: { id: commentId } });
-      return { liked: false, likeCount: updatedComment!.likeCount };
+      return { liked: false, likeCount: newLikeCount.likeCount };
     } else {
       await tx.commentLike.create({
-        data: { userId, commentId },
+        data: {
+          userId,
+          commentId,
+        },
       });
-      await tx.comment.update({
+      const newLikeCount = await tx.comment.update({
         where: { id: commentId },
         data: { likeCount: { increment: 1 } },
+        select: { likeCount: true },
       });
-      const updatedComment = await tx.comment.findUnique({ where: { id: commentId } });
-      return { liked: true, likeCount: updatedComment!.likeCount };
+      return { liked: true, likeCount: newLikeCount.likeCount };
     }
   });
 }
@@ -166,56 +180,13 @@ export async function getPostComments(postId: string, page: number, limit: numbe
   page: number;
   limit: number;
 }> {
-  const skip = (page - 1) * limit;
-
-  async function fetchCommentsWithReplies(commentIds: string[], currentDepth: number): Promise<CommentResponse[]> {
-    if (currentDepth <= 0) return [];
-
-    const comments = await prisma.comment.findMany({
-      where: { parentId: { in: commentIds } },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            firstname: true,
-            lastname: true,
-            avatar: true,
-          },
-        },
-        _count: { select: { replies: true } },
-      },
-    });
-
-    if (comments.length === 0 || currentDepth === 1) {
-      return comments.map(c => ({
-        id: c.id,
-        content: c.content,
-        createdAt: c.createdAt.toISOString(),
-        user: c.user,
-        postId: c.postId,
-        likeCount: c.likeCount,
-        replyCount: c._count.replies || 0,
-        replies: [],
-      }));
-    }
-
-    const nestedReplies = await fetchCommentsWithReplies(comments.map(c => c.id), currentDepth - 1);
-    const replyMap = new Map(nestedReplies.map(r => [r.id, r]));
-
-    return comments.map(c => ({
-      id: c.id,
-      content: c.content,
-      createdAt: c.createdAt.toISOString(),
-      user: c.user,
-      postId: c.postId,
-      likeCount: c.likeCount,
-      replyCount: c._count.replies || 0,
-      replies: replyMap.get(c.id)?.replies || [],
-    }));
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) {
+    console.log(`Post with id ${postId} not found`);
+    throw new Error('پست یافت نشد');
   }
+
+  const skip = (page - 1) * limit;
 
   const [comments, total] = await Promise.all([
     prisma.comment.findMany({
@@ -234,42 +205,60 @@ export async function getPostComments(postId: string, page: number, limit: numbe
           },
         },
         _count: { select: { replies: true } },
+        replies: depth > 1 ? {
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                firstname: true,
+                lastname: true,
+                avatar: true,
+              },
+            },
+            _count: { select: { replies: true } },
+          },
+        } : undefined,
       },
-    }),
+    }) as unknown as CommentWithRelations[],
     prisma.comment.count({ where: { postId, parentId: null } }),
   ]);
 
-  const rootComments = comments.map(c => ({
+  const rootComments: CommentResponse[] = comments.map(c => ({
     id: c.id,
     content: c.content,
     createdAt: c.createdAt.toISOString(),
-    user: c.user,
+    user: {
+      id: c.user.id,
+      username: c.user.username,
+      firstname: c.user.firstname,
+      lastname: c.user.lastname,
+      avatar: c.user.avatar,
+    },
     postId: c.postId,
     likeCount: c.likeCount,
     replyCount: c._count.replies || 0,
-    replies: [],
+    replies: depth > 1 && c.replies ? c.replies.map(r => ({
+      id: r.id,
+      content: r.content,
+      createdAt: r.createdAt.toISOString(),
+      user: {
+        id: r.user.id,
+        username: r.user.username,
+        firstname: r.user.firstname,
+        lastname: r.user.lastname,
+        avatar: r.user.avatar,
+      },
+      postId: r.postId,
+      likeCount: r.likeCount,
+      replyCount: r._count.replies || 0,
+      replies: [],
+    })) : [],
   }));
 
-  if (depth > 1) {
-    const nestedReplies = await fetchCommentsWithReplies(comments.map(c => c.id), depth - 1);
-    const replyMap = new Map(nestedReplies.map(r => [r.id, r]));
-    return {
-      comments: rootComments.map(c => ({
-        ...c,
-        replies: replyMap.get(c.id)?.replies || [],
-      })),
-      total,
-      page,
-      limit,
-    };
-  }
-
-  return {
-    comments: rootComments,
-    total,
-    page,
-    limit,
-  };
+  return { comments: rootComments, total, page, limit };
 }
 
 export async function getReplies(commentId: string, page: number, limit: number, depth: number): Promise<{
@@ -279,55 +268,6 @@ export async function getReplies(commentId: string, page: number, limit: number,
   limit: number;
 }> {
   const skip = (page - 1) * limit;
-
-  async function fetchRepliesWithReplies(replyIds: string[], currentDepth: number): Promise<CommentResponse[]> {
-    if (currentDepth <= 0) return [];
-
-    const replies = await prisma.comment.findMany({
-      where: { parentId: { in: replyIds } },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            firstname: true,
-            lastname: true,
-            avatar: true,
-          },
-        },
-        _count: { select: { replies: true } },
-      },
-    });
-
-    if (replies.length === 0 || currentDepth === 1) {
-      return replies.map(r => ({
-        id: r.id,
-        content: r.content,
-        createdAt: r.createdAt.toISOString(),
-        user: r.user,
-        postId: r.postId,
-        likeCount: r.likeCount,
-        replyCount: r._count.replies || 0,
-        replies: [],
-      }));
-    }
-
-    const nestedReplies = await fetchRepliesWithReplies(replies.map(r => r.id), currentDepth - 1);
-    const replyMap = new Map(nestedReplies.map(r => [r.id, r]));
-
-    return replies.map(r => ({
-      id: r.id,
-      content: r.content,
-      createdAt: r.createdAt.toISOString(),
-      user: r.user,
-      postId: r.postId,
-      likeCount: r.likeCount,
-      replyCount: r._count.replies || 0,
-      replies: replyMap.get(r.id)?.replies || [],
-    }));
-  }
 
   const [replies, total] = await Promise.all([
     prisma.comment.findMany({
@@ -346,35 +286,58 @@ export async function getReplies(commentId: string, page: number, limit: number,
           },
         },
         _count: { select: { replies: true } },
+        replies: depth > 1 ? {
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                firstname: true,
+                lastname: true,
+                avatar: true,
+              },
+            },
+            _count: { select: { replies: true } },
+          },
+        } : undefined,
       },
-    }),
+    }) as unknown as CommentWithRelations[],
     prisma.comment.count({ where: { parentId: commentId } }),
   ]);
 
-  const rootReplies = replies.map(r => ({
+  const rootReplies: CommentResponse[] = replies.map(r => ({
     id: r.id,
     content: r.content,
     createdAt: r.createdAt.toISOString(),
-    user: r.user,
+    user: {
+      id: r.user.id,
+      username: r.user.username,
+      firstname: r.user.firstname,
+      lastname: r.user.lastname,
+      avatar: r.user.avatar,
+    },
     postId: r.postId,
     likeCount: r.likeCount,
     replyCount: r._count.replies || 0,
-    replies: [],
+    replies: depth > 1 && r.replies ? r.replies.map(n => ({
+      id: n.id,
+      content: n.content,
+      createdAt: n.createdAt.toISOString(),
+      user: {
+        id: n.user.id,
+        username: n.user.username,
+        firstname: n.user.firstname,
+        lastname: n.user.lastname,
+        avatar: n.user.avatar,
+      },
+      postId: n.postId,
+      likeCount: n.likeCount,
+      replyCount: n._count.replies || 0,
+      replies: [],
+    })) : [],
   }));
-
-  if (depth > 1) {
-    const nestedReplies = await fetchRepliesWithReplies(replies.map(r => r.id), depth - 1);
-    const replyMap = new Map(nestedReplies.map(r => [r.id, r]));
-    return {
-      replies: rootReplies.map(r => ({
-        ...r,
-        replies: replyMap.get(r.id)?.replies || [],
-      })),
-      total,
-      page,
-      limit,
-    };
-  }
 
   return {
     replies: rootReplies,

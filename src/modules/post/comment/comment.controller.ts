@@ -65,7 +65,9 @@ export async function getPostCommentsHandler(req: AuthRequest, res: Response<Get
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
     let depth = parseInt(req.query.depth as string) || 1;
-    if (depth > 3) depth = 3;
+    if (depth > 2) depth = 2;
+    console.log(`Handling getPostComments: postId=${postId}, page=${page}, limit=${limit}, depth=${depth}`);
+
     const result = await getPostComments(postId, page, limit, depth);
     return res.status(200).json({
       success: true,
@@ -85,7 +87,9 @@ export async function getRepliesHandler(req: AuthRequest, res: Response<GetPostC
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
     let depth = parseInt(req.query.depth as string) || 1;
-    if (depth > 3) depth = 3;
+    if (depth > 2) depth = 2;
+    console.log(`Handling getReplies: commentId=${commentId}, page=${page}, limit=${limit}, depth=${depth}`);
+
     const result = await getReplies(commentId, page, limit, depth);
     return res.status(200).json({
       success: true,
