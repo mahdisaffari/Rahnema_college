@@ -4,7 +4,8 @@ export interface PostResponseData {
   images: { url: string }[];
   likeCount: number;
   bookmarkCount: number;
-  isCloseFriendsOnly: boolean; 
+  isCloseFriendsOnly: boolean;
+  createdAt: string;
 }
 
 export interface getPostProfileApiResponse<T> {

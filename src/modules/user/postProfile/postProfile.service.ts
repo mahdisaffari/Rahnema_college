@@ -28,17 +28,24 @@ export async function getUserPosts(userId: string, viewerId?: string): Promise<P
       likeCount: true,
       bookmarkCount: true,
       isCloseFriendsOnly: true,
+      createdAt: true,
     },
+    orderBy: { createdAt: 'desc' },
   });
+
+  const formattedPosts: PostResponseData[] = posts.map(post => ({
+    ...post,
+    createdAt: post.createdAt.toISOString(),
+  }));
 
   if (viewerId && userId !== viewerId) {
     const isCloseFriend = await prisma.closeFriend.findFirst({
       where: { userId, friendId: viewerId },
     });
-    return posts.filter(post => !post.isCloseFriendsOnly || isCloseFriend);
+    return formattedPosts.filter(post => !post.isCloseFriendsOnly || isCloseFriend);
   }
 
-  return posts;
+  return formattedPosts;
 }
 
 export async function getPostsByUsername(username: string, viewerId?: string): Promise<PostResponseData[]> {
