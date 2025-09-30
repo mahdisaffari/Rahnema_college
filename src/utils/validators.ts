@@ -276,6 +276,39 @@ export async function validateGetPostComments(data: {
   }
 }
 
+export async function validateGetReplies(data: {
+  postId: string;
+  commentId: string;
+  page: number;
+  limit: number;
+}): Promise<{
+  postId?: string | null;
+  commentId?: string | null;
+  page?: string | null;
+  limit?: string | null;
+}> {
+  const schema = z.object({
+    postId: z.string().uuid("شناسه پست نامعتبر است"),
+    commentId: z.string().uuid("شناسه کامنت نامعتبر است"),
+    page: z.number().int().min(1, "صفحه باید حداقل ۱ باشد"),
+    limit: z.number().int().min(1, "حد باید حداقل ۱ باشد").max(50, "حد حداکثر ۵۰ است"),
+  });
+
+  try {
+    schema.parse(data);
+    const post = await prisma.post.findUnique({ where: { id: data.postId } });
+    if (!post) return { postId: "پست یافت نشد" };
+    const comment = await prisma.comment.findUnique({ where: { id: data.commentId } });
+    if (!comment) return { commentId: "کامنت یافت نشد" };
+    return { postId: null, commentId: null, page: null, limit: null };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return error.issues.reduce((acc, issue) => ({ ...acc, [issue.path[0]]: issue.message }), {});
+    }
+    return { commentId: "خطا در اعتبارسنجی" };
+  }
+}
+
 export async function validateGetUserPosts(data: {
   username: string;
   page: number;

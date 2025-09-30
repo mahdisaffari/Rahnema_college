@@ -25,6 +25,7 @@ import { blockUserHandler, unblockUserHandler, getBlockedUsersHandler } from "..
 import { searchByUsernameController } from "../modules/user/search/by_username/searchByUsername.controller";
 import { getCloseFriendListHandler } from "../modules/user/closeFriendList/closeFriendList.controller";
 import { validateMentionedPostsMiddleware } from "../modules/user/Mentioned_Post/mentionedPost.middleware";
+import { validateCommentIdMiddleware, validateCreateCommentMiddleware, validateCreateReplyMiddleware, validateGetPostCommentsMiddleware, validateGetRepliesMiddleware } from "../modules/post/comment/comment.middleware";
 
 const router = Router();
 const searchByPostController = new SearchByPostController();
@@ -56,11 +57,11 @@ router.put("/posts/:id", auth, upload.array("images", 5), validateEditPostMiddle
 router.get("/users/:username/posts", auth, validateGetUserPostsMiddleware, getUserPostsHandler); 
 router.post("/posts/:id/bookmark", auth, bookmarkPostHandler);
 router.post("/posts/:id/like", auth, likePostHandler);
-router.post("/posts/:id/comments", auth, validateCreateComment, createCommentHandler);
-router.post("/posts/:id/comments/:commentId/reply", auth, validateCreateReply, createReplyHandler);
-router.post("/posts/:id/comments/:commentId/like", auth, validateCommentId, likeCommentHandler);
-router.get("/posts/:id/comments", auth, validateGetPostComments, getPostCommentsHandler); 
-router.get("/posts/:id/comments/:commentId/replies", auth, validateGetPostComments, getRepliesHandler); 
+router.post("/posts/:id/comments", auth, validateCreateCommentMiddleware, createCommentHandler);
+router.post("/posts/:id/comments/:commentId/reply", auth, validateCreateReplyMiddleware, createReplyHandler);
+router.post("/posts/:id/comments/:commentId/like", auth, validateCommentIdMiddleware, likeCommentHandler);
+router.get("/posts/:id/comments", auth, validateGetPostCommentsMiddleware, getPostCommentsHandler);
+router.get("/posts/:id/comments/:commentId/replies", auth, validateGetRepliesMiddleware, getRepliesHandler);
 //router.delete("/posts/:id/bookmark", auth, bookmarkPostHandler);
 //router.delete("/posts/:id/like", auth, likePostHandler);
 //router.get("/posts/:id/likes", auth, getPostLikesCountHandler);
