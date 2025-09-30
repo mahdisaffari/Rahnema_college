@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../../auth/auth.middleware';
 import { CreateCommentApiResponse, LikeCommentResponse, GetPostCommentsResponse } from './comment.types';
-import { createComment, createReply, likeComment, getPostComments } from './comment.service';
+import { createComment, createReply, likeComment, getPostComments, getReplies } from './comment.service';
 import { handleError } from '../../../utils/errorHandler';
 
 // handler baraye ijad comment
@@ -63,9 +63,10 @@ export async function getPostCommentsHandler(req: AuthRequest, res: Response<Get
   try {
     const postId = req.params.id;
     const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-
-    const result = await getPostComments(postId, page, limit);
+    const limit = parseInt(req.query.limit as string) || 5;
+    let depth = parseInt(req.query.depth as string) || 1;
+    if (depth > 3) depth = 3;
+    const result = await getPostComments(postId, page, limit, depth);
     return res.status(200).json({
       success: true,
       message: 'کامنت‌ها با موفقیت دریافت شد',
@@ -73,5 +74,30 @@ export async function getPostCommentsHandler(req: AuthRequest, res: Response<Get
     });
   } catch (error) {
     return handleError(error, res, 'خطا در دریافت کامنت‌ها', 404);
+  }
+}
+
+// handler baraye gereftan riplay haye comment
+export async function getRepliesHandler(req: AuthRequest, res: Response<GetPostCommentsResponse>) {
+  try {
+    const postId = req.params.id;
+    const commentId = req.params.commentId;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 5;
+    let depth = parseInt(req.query.depth as string) || 1;
+    if (depth > 3) depth = 3;
+    const result = await getReplies(commentId, page, limit, depth);
+    return res.status(200).json({
+      success: true,
+      message: 'ریپلای‌ها با موفقیت دریافت شد',
+      data: {
+        comments: result.replies,
+        total: result.total,
+        page: result.page,
+        limit: result.limit,
+      },
+    });
+  } catch (error) {
+    return handleError(error, res, 'خطا در دریافت ریپلای‌ها', 404);
   }
 }

@@ -14,7 +14,8 @@ export interface CommentResponse {
     avatar: string | null;
   };
   postId: string;
-  likeCount: number; 
+  likeCount: number;
+  replyCount: number;
   replies: CommentResponse[];
 }
 

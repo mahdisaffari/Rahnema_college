@@ -13,8 +13,8 @@ import { getPostProfileHandler } from "../modules/user/postProfile/postProfile.c
 import { validateEditPostMiddleware } from "../modules/post/editPost/editPost.middleware";
 import { getPostLikesCountHandler, likePostHandler } from "../modules/post/like_unlike/like.controller";
 import { getFollowersHandler, getFollowingsHandler, getUserFollowersHandler, getUserFollowingsHandler } from "../modules/user/followers_followings/followersFollowings.controller";
-import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCommentsHandler } from "../modules/post/comment/comment.controller";
-import { validateCreateComment, validateCreateReply, validateCommentId, validateGetPostComments, validateCloseFriend } from "../utils/validators";
+import { createCommentHandler, createReplyHandler, likeCommentHandler, getPostCommentsHandler, getRepliesHandler } from "../modules/post/comment/comment.controller";
+import { validateCreateComment, validateCreateReply, validateCommentId, validateCloseFriend, validateGetPostComments } from "../utils/validators";
 import { getHomepageHandler } from "../modules/user/homepage/homepage.controller";
 import { validateHomepageMiddleware } from "../modules/user/homepage/homepage.middleware";
 import { SearchByPostController } from "../modules/user/search/by_post/searchByPost.controller";
@@ -59,7 +59,8 @@ router.post("/posts/:id/like", auth, likePostHandler);
 router.post("/posts/:id/comments", auth, validateCreateComment, createCommentHandler);
 router.post("/posts/:id/comments/:commentId/reply", auth, validateCreateReply, createReplyHandler);
 router.post("/posts/:id/comments/:commentId/like", auth, validateCommentId, likeCommentHandler);
-router.get("/posts/:id/comments", auth, validateGetPostComments, getPostCommentsHandler);
+router.get("/posts/:id/comments", auth, validateGetPostComments, getPostCommentsHandler); 
+router.get("/posts/:id/comments/:commentId/replies", auth, validateGetPostComments, getRepliesHandler); 
 //router.delete("/posts/:id/bookmark", auth, bookmarkPostHandler);
 //router.delete("/posts/:id/like", auth, likePostHandler);
 //router.get("/posts/:id/likes", auth, getPostLikesCountHandler);
@@ -88,8 +89,5 @@ router.get("/homepage", auth, validateHomepageMiddleware, getHomepageHandler);
 // مسیر های سرچ
 router.get("/search/users", auth, searchByUsernameController);
 router.get("/search/posts", auth, searchByPostController.getPostsByHashtag.bind(searchByPostController));
-
-
-
 
 export default router;
