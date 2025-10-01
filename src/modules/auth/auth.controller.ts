@@ -72,13 +72,12 @@ export async function forgotPasswordHandler(req: Request<{}, {}, ForgotPasswordR
   try {
     const error = validateForgotPassword(req.body);
     if (error) return res.status(400).json({ success: false, message: error });
-    await authService.forgotPassword(req.body.email);
+    await authService.forgotPassword(req.body.identifier);
     return res.json({ success: true, message: 'ایمیل بازنشانی ارسال شد' });
   } catch (error) {
     return handleError(error, res, 'خطا در درخواست بازنشانی', 400);
   }
 }
-
 
 export async function resetPasswordHandler(req: Request<{}, {}, ResetPasswordRequest>, res: Response<ResetPasswordResponse>) {
   try {

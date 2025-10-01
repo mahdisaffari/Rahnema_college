@@ -77,16 +77,29 @@ export const refreshAccessToken = async (refreshToken: string) => {
   }
 };
 
-export const forgotPassword = async (email: string) => {
-  const user = await prisma.user.findUnique({ where: { email: normEmail(email) } });
+
+export const forgotPassword = async (identifier: string) => {
+  const user = identifier.includes("@")
+    ? await prisma.user.findUnique({ where: { email: normEmail(identifier) } })
+    : await prisma.user.findUnique({ where: { username: identifier.trim() } });
+  
   if (!user) throw new Error("کاربر یافت نشد");
+  
   const token = randomUUID();
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); 
   await prisma.passwordResetToken.create({
     data: { token, userId: user.id, expiresAt },
   });
-  await sendPasswordResetEmail(normEmail(email), token);
+  
+  try {
+    await sendPasswordResetEmail(user.email, token); 
+  } catch (emailError) {
+    console.error('Failed to send reset email:', emailError);
+    throw new Error("خطا در ارسال ایمیل بازنشانی");
+  }
 };
+
+
 
 export const resetPassword = async (token: string, newPassword: string) => {
   const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });

@@ -31,7 +31,7 @@ export interface LoginResponse {
 }
 
 export interface ForgotPasswordRequest {
-  email: string;
+  identifier: string; 
 }
 
 export interface ForgotPasswordResponse {

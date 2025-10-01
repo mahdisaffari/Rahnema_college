@@ -32,6 +32,6 @@ export async function auth(req: AuthRequest, res: Response, next: NextFunction) 
 }
 
 export const forgotPasswordLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  message: { success: false, message: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً 15 دقیقه صبر کنید." },
+  windowMs: 5 * 60 * 1000,
+  message: { success: false, message: "تعداد درخواست‌ها بیش از حد مجاز است. لطفاً 5 دقیقه صبر کنید." },
 });

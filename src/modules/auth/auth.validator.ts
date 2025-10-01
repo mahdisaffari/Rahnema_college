@@ -23,11 +23,11 @@ export const validateLogin = ({ identifier, password, rememberMe }: LoginRequest
   }
 };
 
-export const validateForgotPassword = ({ email }: ForgotPasswordRequest): string | null => {
+export const validateForgotPassword = ({ identifier }: ForgotPasswordRequest): string | null => {
   try {
     z.object({
-      email: z.string().email("ایمیل معتبر نیست").min(1, "ایمیل الزامی است"),
-    }).parse({ email });
+      identifier: z.string().min(1, "شناسه الزامی است").refine(val => val.includes('@') ? z.string().email().safeParse(val).success : true, "شناسه معتبر نیست"),
+    }).parse({ identifier });
     return null;
   } catch (error) {
     return error instanceof z.ZodError ? error.issues[0].message : "خطای اعتبارسنجی";
