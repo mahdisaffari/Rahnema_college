@@ -1,6 +1,10 @@
 import { Response } from 'express';
 import { z } from 'zod';
 
+interface CustomError extends Error {
+  statusCode?: number;
+}
+
 export function handleError<T, R>(
   error: unknown,
   res: Response<R>,
@@ -9,10 +13,16 @@ export function handleError<T, R>(
   defaultData?: T
 ): Response<R> {
   console.error(error);
-  const message = error instanceof z.ZodError 
-    ? error.issues[0].message 
-    : (error instanceof Error ? error.message || defaultMessage : defaultMessage);
+  let message = defaultMessage;
+  let finalStatus = statusCode;
 
+  if (error instanceof z.ZodError) {
+    message = error.issues[0].message;
+    finalStatus = 400;
+  } else if (error instanceof Error) {
+    message = error.message || defaultMessage;
+    finalStatus = (error as CustomError).statusCode || statusCode; // استفاده از interface به جای any
+  }
   // base response with success and message
   const response: { success: boolean; message: string; data?: T } = {
     success: false,
@@ -26,5 +36,5 @@ export function handleError<T, R>(
     response.data = defaultData; // estefade az defaultData agar vojood dasht
   }
 
-  return res.status(error instanceof z.ZodError ? 400 : statusCode).json(response as R);
+  return res.status(finalStatus).json(response as R);
 }
