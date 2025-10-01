@@ -21,7 +21,7 @@ export function handleError<T, R>(
     finalStatus = 400;
   } else if (error instanceof Error) {
     message = error.message || defaultMessage;
-    finalStatus = (error as CustomError).statusCode || statusCode; // استفاده از interface به جای any
+    finalStatus = (error as CustomError).statusCode || statusCode; 
   }
   // base response with success and message
   const response: { success: boolean; message: string; data?: T } = {
