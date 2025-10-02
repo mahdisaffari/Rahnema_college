@@ -1,16 +1,45 @@
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 import retry from 'retry';
+import { google } from 'googleapis';
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: env.EMAIL_USER, pass: env.EMAIL_PASS }, 
-  connectionTimeout: 10000, 
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-  logger: true,
-  debug: env.NODE_ENV !== 'production',
-});
+const OAuth2 = google.auth.OAuth2;
+
+async function createTransporter() {
+  const oauth2Client = new OAuth2(
+    env.CLIENT_ID,
+    env.CLIENT_SECRET,
+    'https://developers.google.com/oauthplayground'
+  );
+
+  oauth2Client.setCredentials({
+    refresh_token: env.REFRESH_TOKEN,
+  });
+
+  const accessTokenObj = await new Promise((resolve, reject) => {
+    oauth2Client.getAccessToken((err: any, token: any) => {
+      if (err) reject(err);
+      resolve(token);
+    });
+  });
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      type: 'OAuth2',
+      user: env.EMAIL_USER,
+      clientId: env.CLIENT_ID,
+      clientSecret: env.CLIENT_SECRET,
+      refreshToken: env.REFRESH_TOKEN,
+      accessToken: accessTokenObj as string,
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+    logger: true,
+    debug: env.NODE_ENV !== 'production',
+  });
+}
 
 function sendMailWithRetry(mailOptions: nodemailer.SendMailOptions, retries = 3) {
   const operation = retry.operation({
@@ -23,6 +52,7 @@ function sendMailWithRetry(mailOptions: nodemailer.SendMailOptions, retries = 3)
   return new Promise((resolve, reject) => {
     operation.attempt(async () => {
       try {
+        const transporter = await createTransporter();
         const info = await transporter.sendMail(mailOptions);
         resolve(info);
       } catch (err) {
