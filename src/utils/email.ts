@@ -1,26 +1,12 @@
 import nodemailer from 'nodemailer';
-import { google } from 'googleapis';
 import { env } from '../config/env';
 import retry from 'retry';
-
-const oAuth2Client = new google.auth.OAuth2(
-  env.CLIENT_ID,
-  env.CLIENT_SECRET,
-  'https://developers.google.com/oauthplayground' 
-);
-
-oAuth2Client.setCredentials({
-  refresh_token: env.REFRESH_TOKEN,
-});
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    type: 'OAuth2',
     user: env.EMAIL_USER,
-    clientId: env.CLIENT_ID,
-    clientSecret: env.CLIENT_SECRET,
-    refreshToken: env.REFRESH_TOKEN,
+    pass: env.EMAIL_PASS,  
   },
   connectionTimeout: 10000,
   greetingTimeout: 10000,
@@ -60,6 +46,7 @@ export async function sendVerificationEmail(email: string, token: string) {
       subject: 'تأیید ایمیل',
       html: `<p>برای تأیید، <a href="${url}">اینجا کلیک کنید</a></p>`,
     });
+    console.log(`Verification email sent to: ${email}`);
   } catch (err) {
     console.error('Verification email error:', err);
     throw new Error('خطا در ارسال ایمیل تأیید، لطفاً دوباره تلاش کنید');
@@ -73,8 +60,9 @@ export async function sendPasswordResetEmail(email: string, token: string) {
       from: `"CodeChefs" <${env.EMAIL_USER}>`,
       to: email,
       subject: 'بازنشانی رمز عبور',
-      html: `<p>برای بازنشانی رمز عبور، <a href="${url}">اینجا کلیک کنید</a>. این لینک پس از ۱ ساعت منقضی می‌شود.</p>`,
+      html: `<p>برای بازنشانی، <a href="${url}">اینجا کلیک کنید</a>. این لینک ۱ ساعت معتبره.</p>`,
     });
+    console.log(`Reset email sent to: ${email}`);
   } catch (err) {
     console.error('Reset email error:', err);
     throw new Error('خطا در ارسال ایمیل بازنشانی، لطفاً دوباره تلاش کنید');

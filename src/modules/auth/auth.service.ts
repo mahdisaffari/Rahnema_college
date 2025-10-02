@@ -18,12 +18,12 @@ export const register = async (username: string, email: string, password: string
     prisma.user.findUnique({ where: { email: normEmail(email) } }),
   ]);
   if (byUser) {
-    const error = new Error("نام کاربری وجود دارد") as Error & { statusCode?: number };
+    const error = new Error("نام کاربری قبلاً ثبت شده است") as Error & { statusCode?: number };
     error.statusCode = 400;
     throw error;
   }
   if (byEmail) {
-    const error = new Error("ایمیل وجود دارد") as Error & { statusCode?: number };
+    const error = new Error("ایمیل قبلاً ثبت شده است") as Error & { statusCode?: number };
     error.statusCode = 400;
     throw error;
   }
@@ -41,13 +41,10 @@ export const register = async (username: string, email: string, password: string
   
   try {
     await sendVerificationEmail(normEmail(email), token);
-    console.log('Verification email sent to:', normEmail(email));
   } catch (err) {
-    console.error('Failed to send verification email:', err);
-    throw new Error('خطا در ارسال ایمیل تأیید، لطفاً دوباره تلاش کنید');
+    throw new Error('ثبت‌نام انجام شد، اما ارسال ایمیل تأیید با مشکل مواجه شد. لطفاً بعداً دوباره تلاش کنید.');
   }
 };
-
 
 export const login = async (identifier: string, password: string, rememberMe: boolean = false) => {
   LoginSchema.parse({ identifier, password });
@@ -81,7 +78,6 @@ export const refreshAccessToken = async (refreshToken: string) => {
   }
 };
 
-
 export const forgotPassword = async (identifier: string) => {
   let user;
 
@@ -91,7 +87,11 @@ export const forgotPassword = async (identifier: string) => {
     user = await prisma.user.findUnique({ where: { username: identifier.trim() } });
   }
 
-  if (!user) throw new Error("کاربر یافت نشد");
+  if (!user) {
+    const error = new Error("کاربر با این شناسه یافت نشد") as Error & { statusCode?: number };
+    error.statusCode = 404;
+    throw error;
+  }
 
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
 
@@ -103,13 +103,10 @@ export const forgotPassword = async (identifier: string) => {
 
   try {
     await sendPasswordResetEmail(user.email, token);
-    console.log('Reset email sent to:', user.email);
   } catch (err) {
-    console.error('Reset email failed:', err);
-    throw new Error('خطا در ارسال ایمیل بازنشانی، لطفاً دوباره تلاش کنید');
+    throw new Error('درخواست بازنشانی رمز عبور ثبت شد، اما ارسال ایمیل با مشکل مواجه شد. لطفاً بعداً دوباره تلاش کنید.');
   }
 };
-
 
 export const resetPassword = async (token: string, newPassword: string) => {
   const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
