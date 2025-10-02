@@ -3,19 +3,24 @@ import { env } from '../config/env';
 import retry from 'retry';
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
   auth: {
     user: env.EMAIL_USER,
-    pass: env.EMAIL_PASS,  
+    pass: env.EMAIL_PASS,
   },
+  tls: { rejectUnauthorized: false },
+  pool: true,
+  maxConnections: 1,
+  maxMessages: 3,
   connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-  logger: true,
-  debug: env.NODE_ENV !== 'production',
 });
 
-function sendMailWithRetry(mailOptions: nodemailer.SendMailOptions, retries = 3) {
+function sendMailWithRetry(
+  mailOptions: nodemailer.SendMailOptions, 
+  retries = 3
+): Promise<nodemailer.SentMessageInfo> {  
   const operation = retry.operation({
     retries,
     factor: 2,
@@ -29,9 +34,8 @@ function sendMailWithRetry(mailOptions: nodemailer.SendMailOptions, retries = 3)
         const info = await transporter.sendMail(mailOptions);
         resolve(info);
       } catch (err) {
-        console.error('Send mail error:', err);
         if (operation.retry(err as Error)) return;
-        reject(operation.mainError());
+        reject(err);
       }
     });
   });
@@ -39,32 +43,20 @@ function sendMailWithRetry(mailOptions: nodemailer.SendMailOptions, retries = 3)
 
 export async function sendVerificationEmail(email: string, token: string) {
   const url = `${env.APP_URL}/verify-email?token=${token}`;
-  try {
-    await sendMailWithRetry({
-      from: `"CodeChefs" <${env.EMAIL_USER}>`,
-      to: email,
-      subject: 'تأیید ایمیل',
-      html: `<p>برای تأیید، <a href="${url}">اینجا کلیک کنید</a></p>`,
-    });
-    console.log(`Verification email sent to: ${email}`);
-  } catch (err) {
-    console.error('Verification email error:', err);
-    throw new Error('خطا در ارسال ایمیل تأیید، لطفاً دوباره تلاش کنید');
-  }
+  await sendMailWithRetry({
+    from: `"CodeChefs" <${env.EMAIL_USER}>`,
+    to: email,
+    subject: 'تأیید ایمیل',
+    html: `<p>برای تأیید، <a href="${url}">اینجا کلیک کنید</a></p>`,
+  });
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const url = `${env.APP_URL}/reset-password?token=${token}`;
-  try {
-    await sendMailWithRetry({
-      from: `"CodeChefs" <${env.EMAIL_USER}>`,
-      to: email,
-      subject: 'بازنشانی رمز عبور',
-      html: `<p>برای بازنشانی، <a href="${url}">اینجا کلیک کنید</a>. این لینک ۱ ساعت معتبره.</p>`,
-    });
-    console.log(`Reset email sent to: ${email}`);
-  } catch (err) {
-    console.error('Reset email error:', err);
-    throw new Error('خطا در ارسال ایمیل بازنشانی، لطفاً دوباره تلاش کنید');
-  }
+  await sendMailWithRetry({
+    from: `"CodeChefs" <${env.EMAIL_USER}>`,
+    to: email,
+    subject: 'بازنشانی رمز عبور',
+    html: `<p>برای بازنشانی، <a href="${url}">اینجا کلیک کنید</a>. این لینک ۱ ساعت معتبره.</p>`,
+  });
 }
