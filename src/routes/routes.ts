@@ -3,7 +3,7 @@ import { login, register, logout, verifyEmailHandler, refreshHandler, forgotPass
 import { auth, forgotPasswordLimiter } from "../modules/auth/auth.middleware";
 import { upload } from "../config/multer.config";
 import { getProfileHandler, updateProfileHandler, getUserHandler, togglePrivateProfileHandler, addCloseFriendHandler, removeCloseFriendHandler } from "../modules/user/user.controller";
-import { validatePrivateToggleMiddleware, validateProfileUpdateMiddleware, validateUsernameMiddleware } from "../modules/user/user.middleware";
+import { validateCloseFriendMiddleware, validatePrivateToggleMiddleware, validateProfileUpdateMiddleware, validateUsernameMiddleware } from "../modules/user/user.middleware";
 import { validateAllMiddleware, validateGetUserPostsMiddleware } from "../modules/post/post.middleware";
 import { createSetupPostHandler, getPostHandler, getUserPostsHandler } from "../modules/post/post.controller";
 import { editPostHandler } from "../modules/post/editPost/editPost.controller"; 
@@ -44,11 +44,15 @@ router.get("/profile", auth, getProfileHandler);
 router.put("/profile", auth, upload.single("avatar"), validateProfileUpdateMiddleware, updateProfileHandler);
 router.put("/profile/toggle-private", auth, validatePrivateToggleMiddleware, togglePrivateProfileHandler); 
 router.get("/profile/posts", auth, getPostProfileHandler);
-router.get('/user/close-friends', auth, getCloseFriendListHandler);
+router.get("/user/close-friends", auth, getCloseFriendListHandler);
+
 // مسیرهای کاربر
 router.get("/users/:username", auth, validateUsernameMiddleware, getUserHandler);
-router.post("/close-friends/:username/add", auth, validateCloseFriend, addCloseFriendHandler);
-router.post("/close-friends/:username/remove", auth, validateCloseFriend, removeCloseFriendHandler);
+
+// مسیر های کلوز فرند
+router.post("/user/close-friends/:username", auth, validateCloseFriendMiddleware, addCloseFriendHandler);
+router.delete("/user/close-friends/:username", auth, validateCloseFriendMiddleware, removeCloseFriendHandler);
+router.get("/user/close-friends", auth, getCloseFriendListHandler);
 
 // مسیرهای پست
 router.post("/posts", auth, upload.array("images", 5), validateAllMiddleware, createSetupPostHandler);

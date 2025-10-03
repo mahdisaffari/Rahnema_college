@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { validatePrivateToggle, validateProfileUpdate, validateUsername } from './user.validator';
 import { UserApiResponse, ProfileResponse, UserResponse, PrivateToggleResponse } from './user.types';
 import { AuthRequest } from '../auth/auth.middleware';
+import { validateCloseFriend } from '../../utils/validators';
 
 export function validateProfileUpdateMiddleware(req: AuthRequest, res: Response<UserApiResponse<ProfileResponse>>, next: NextFunction) {
   const { firstname, lastname, bio, email, password } = req.body;
@@ -33,5 +34,14 @@ export function validatePrivateToggleMiddleware(req: AuthRequest, res: Response<
       isPrivate: false
     }
   });
+  next();
+}
+
+export async function validateCloseFriendMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+  const { username } = req.params;
+  const errors = await validateCloseFriend({ username });
+  if (errors.username) {
+    return res.status(400).json({ success: false, message: errors.username });
+  }
   next();
 }
