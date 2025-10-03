@@ -62,13 +62,14 @@ export async function likeCommentHandler(req: AuthRequest, res: Response<LikeCom
 export async function getPostCommentsHandler(req: AuthRequest, res: Response<GetPostCommentsResponse>) {
   try {
     const postId = req.params.id;
+    const userId = req.user!.id; 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
     let depth = parseInt(req.query.depth as string) || 1;
     if (depth > 2) depth = 2;
     console.log(`Handling getPostComments: postId=${postId}, page=${page}, limit=${limit}, depth=${depth}`);
 
-    const result = await getPostComments(postId, page, limit, depth);
+    const result = await getPostComments(postId, page, limit, depth, userId); 
     return res.status(200).json({
       success: true,
       message: 'کامنت‌ها با موفقیت دریافت شد',
@@ -78,19 +79,19 @@ export async function getPostCommentsHandler(req: AuthRequest, res: Response<Get
     return handleError(error, res, 'خطا در دریافت کامنت‌ها', 404);
   }
 }
-
 // handler baraye gereftan riplay haye comment
 export async function getRepliesHandler(req: AuthRequest, res: Response<GetPostCommentsResponse>) {
   try {
     const postId = req.params.id;
     const commentId = req.params.commentId;
+    const userId = req.user!.id; 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 5;
     let depth = parseInt(req.query.depth as string) || 1;
     if (depth > 2) depth = 2;
     console.log(`Handling getReplies: commentId=${commentId}, page=${page}, limit=${limit}, depth=${depth}`);
 
-    const result = await getReplies(commentId, page, limit, depth);
+    const result = await getReplies(commentId, page, limit, depth, userId); 
     return res.status(200).json({
       success: true,
       message: 'ریپلای‌ها با موفقیت دریافت شد',

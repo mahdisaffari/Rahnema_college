@@ -17,6 +17,7 @@ export interface CommentResponse {
   likeCount: number;
   replyCount: number;
   replies: CommentResponse[];
+  isLiked: boolean; 
 }
 
 export interface CreateCommentApiResponse {

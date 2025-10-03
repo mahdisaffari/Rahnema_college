@@ -16,6 +16,9 @@ type CommentWithRelations = Prisma.CommentGetPayload<{
       };
     };
     _count: { select: { replies: true } };
+    likes: {
+      select: { userId: true };
+    };
     replies: {
       include: {
         user: {
@@ -28,6 +31,9 @@ type CommentWithRelations = Prisma.CommentGetPayload<{
           };
         };
         _count: { select: { replies: true } };
+        likes: {
+          select: { userId: true };
+        };
       };
     };
   };
@@ -80,6 +86,7 @@ export async function createComment(
       likeCount: comment.likeCount,
       replyCount: comment._count.replies || 0,
       replies: [],
+      isLiked: false, // Default, since no userId for like check here
     };
   });
 }
@@ -133,6 +140,7 @@ export async function createReply(
       likeCount: reply.likeCount,
       replyCount: reply._count.replies || 0,
       replies: [],
+      isLiked: false, // Default, since no userId for like check here
     };
   });
 }
@@ -174,17 +182,14 @@ export async function likeComment(userId: string, commentId: string): Promise<{ 
   });
 }
 
-export async function getPostComments(postId: string, page: number, limit: number, depth: number): Promise<{
+export async function getPostComments(postId: string, page: number, limit: number, depth: number, userId: string): Promise<{
   comments: CommentResponse[];
   total: number;
   page: number;
   limit: number;
 }> {
   const post = await prisma.post.findUnique({ where: { id: postId } });
-  if (!post) {
-    console.log(`Post with id ${postId} not found`);
-    throw new Error('پست یافت نشد');
-  }
+  if (!post) throw new Error('پست یافت نشد');
 
   const skip = (page - 1) * limit;
 
@@ -195,30 +200,22 @@ export async function getPostComments(postId: string, page: number, limit: numbe
       skip,
       take: limit,
       include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            firstname: true,
-            lastname: true,
-            avatar: true,
-          },
-        },
+        user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
         _count: { select: { replies: true } },
+        likes: {
+          where: { userId },
+          select: { userId: true },
+        },
         replies: depth > 1 ? {
           take: limit,
           orderBy: { createdAt: 'desc' },
           include: {
-            user: {
-              select: {
-                id: true,
-                username: true,
-                firstname: true,
-                lastname: true,
-                avatar: true,
-              },
-            },
+            user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
             _count: { select: { replies: true } },
+            likes: {
+              where: { userId },
+              select: { userId: true },
+            },
           },
         } : undefined,
       },
@@ -240,6 +237,7 @@ export async function getPostComments(postId: string, page: number, limit: numbe
     postId: c.postId,
     likeCount: c.likeCount,
     replyCount: c._count.replies || 0,
+    isLiked: c.likes.length > 0,
     replies: depth > 1 && c.replies ? c.replies.map(r => ({
       id: r.id,
       content: r.content,
@@ -254,6 +252,7 @@ export async function getPostComments(postId: string, page: number, limit: numbe
       postId: r.postId,
       likeCount: r.likeCount,
       replyCount: r._count.replies || 0,
+      isLiked: r.likes.length > 0,
       replies: [],
     })) : [],
   }));
@@ -261,7 +260,7 @@ export async function getPostComments(postId: string, page: number, limit: numbe
   return { comments: rootComments, total, page, limit };
 }
 
-export async function getReplies(commentId: string, page: number, limit: number, depth: number): Promise<{
+export async function getReplies(commentId: string, page: number, limit: number, depth: number, userId: string): Promise<{
   replies: CommentResponse[];
   total: number;
   page: number;
@@ -276,30 +275,22 @@ export async function getReplies(commentId: string, page: number, limit: number,
       skip,
       take: limit,
       include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            firstname: true,
-            lastname: true,
-            avatar: true,
-          },
-        },
+        user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
         _count: { select: { replies: true } },
+        likes: {
+          where: { userId },
+          select: { userId: true },
+        },
         replies: depth > 1 ? {
           take: limit,
           orderBy: { createdAt: 'desc' },
           include: {
-            user: {
-              select: {
-                id: true,
-                username: true,
-                firstname: true,
-                lastname: true,
-                avatar: true,
-              },
-            },
+            user: { select: { id: true, username: true, firstname: true, lastname: true, avatar: true } },
             _count: { select: { replies: true } },
+            likes: {
+              where: { userId },
+              select: { userId: true },
+            },
           },
         } : undefined,
       },
@@ -321,6 +312,7 @@ export async function getReplies(commentId: string, page: number, limit: number,
     postId: r.postId,
     likeCount: r.likeCount,
     replyCount: r._count.replies || 0,
+    isLiked: r.likes.length > 0,
     replies: depth > 1 && r.replies ? r.replies.map(n => ({
       id: n.id,
       content: n.content,
@@ -335,6 +327,7 @@ export async function getReplies(commentId: string, page: number, limit: number,
       postId: n.postId,
       likeCount: n.likeCount,
       replyCount: n._count.replies || 0,
+      isLiked: n.likes.length > 0,
       replies: [],
     })) : [],
   }));
