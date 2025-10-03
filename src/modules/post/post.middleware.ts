@@ -1,11 +1,10 @@
-// post.middleware.ts
 import { NextFunction, Response } from 'express';
 import { validateAll } from './post.validator';
 import { AuthRequest } from '../auth/auth.middleware';
 import { validateGetUserPosts } from '../../utils/validators';
 
 export async function validateAllMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
-  const { caption, mentions, isCloseFriendsOnly }: { caption?: string; mentions?: string | string[]; isCloseFriendsOnly?: boolean } = req.body; // تایپ‌دهی صریح
+  const { caption, mentions, isCloseFriendsOnly }: { caption?: string; mentions?: string | string[]; isCloseFriendsOnly?: string | boolean } = req.body;
   const images = (req.files as Express.Multer.File[] | undefined) ?? undefined;
 
   let cleanedMentions: string[] = [];
@@ -24,14 +23,24 @@ export async function validateAllMiddleware(req: AuthRequest, res: Response, nex
     } else if (Array.isArray(mentions)) {
       cleanedMentions = mentions;
     }
-    cleanedMentions = cleanedMentions.map(m => m.replace('@', '')); 
+    cleanedMentions = cleanedMentions.map(m => m.replace('@', ''));
   }
 
-  const errors = await validateAll({ caption, images, mentions: cleanedMentions, isCloseFriendsOnly });
+  const parsedIsCloseFriendsOnly = typeof isCloseFriendsOnly === 'string' ? isCloseFriendsOnly === 'true' : !!isCloseFriendsOnly;
+
+  const errors = await validateAll({
+    caption,
+    images,
+    mentions: cleanedMentions,
+    isCloseFriendsOnly: parsedIsCloseFriendsOnly,
+  });
+
   if (errors.images || errors.caption || errors.mentions || errors.hashtags || errors.isCloseFriendsOnly) {
     return res.status(400).json({ success: false, message: 'خطا در اعتبارسنجی', data: errors });
   }
-  req.body.mentions = cleanedMentions; 
+
+  req.body.mentions = cleanedMentions;
+  req.body.isCloseFriendsOnly = parsedIsCloseFriendsOnly; 
   next();
 }
 
