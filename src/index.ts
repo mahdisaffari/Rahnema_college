@@ -1,4 +1,4 @@
-﻿import express from "express";
+import express from "express";
 import { env } from "./config/env";
 import authRoutes from "./routes/routes";
 import cors from 'cors';
@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 
 app.use(cors({
-  origin: ["http://127.0.0.1:5173", "http://localhost:5173", "http://0.0.0.0:5173", "http://188.121.116.152:5173", "http://188.121.116.152"], // frontend dev URLs
+  origin: ["http://127.0.0.1:5173", "http://localhost:5173", "http://0.0.0.0:5173", "http://188.121.116.152:5173", "http://188.121.116.152",  "https://188.121.116.152", "https://codechefs.rahnemacollege.ir"], // frontend dev URLs
   credentials: true,
 }));
 
