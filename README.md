@@ -2,7 +2,6 @@
 
 Backend API for a **social media platform** (Instagram-like) built as a team project at **[Rahnema College Bootcamp](https://github.com/mahdisaffari/Rahnema_college)**. It provides authentication, posts, comments, likes, bookmarks, follow/followers, close friends, blocking, mentions, hashtags, and more.
 
-**Repository:** [https://github.com/mahdisaffari/Rahnema_college](https://github.com/mahdisaffari/Rahnema_college)
 
 ---
 
