@@ -225,6 +225,6 @@ See `api.http` in the repo and the route definitions in `src/routes/routes.ts` o
 
 ---
 
-## Screenshots
+## We :)
 
 ![rahnema](./rahnema.jpg)
